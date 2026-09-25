@@ -1,0 +1,141 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add Customer - GP Prints</title>
+
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+
+</head>
+
+<body>
+
+    <div class="add-customer-page">
+
+        <div class="add-customer-card">
+
+            <h1>Add Customer</h1>
+
+            <p>
+                Enter the customer's details below.
+            </p>
+
+
+            <form method="POST" class="customer-form">
+
+                {% csrf_token %}
+
+
+                <!-- Name -->
+
+                <div class="form-group">
+
+                    <label for="name">
+                        Customer Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="Enter customer name"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Phone -->
+
+                <div class="form-group">
+
+                    <label for="phone">
+                        Phone Number
+                    </label>
+
+                    <input
+                        type="text"
+                        id="phone"
+                        name="phone"
+                        placeholder="Enter phone number"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Email -->
+
+                <div class="form-group">
+
+                    <label for="email">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter email address"
+                    >
+
+                </div>
+
+
+                <!-- Address -->
+
+                <div class="form-group">
+
+                    <label for="address">
+                        Address
+                    </label>
+
+                    <textarea
+                        id="address"
+                        name="address"
+                        placeholder="Enter customer address"
+                    ></textarea>
+
+                </div>
+
+
+                <!-- Buttons -->
+
+                <div class="form-buttons">
+
+                    <button
+                        type="submit"
+                        class="save-customer-btn">
+
+                        Save Customer
+
+                    </button>
+
+
+                    <a
+                        href="{% url 'customer_list' %}"
+                        class="cancel-btn">
+
+                        Cancel
+
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

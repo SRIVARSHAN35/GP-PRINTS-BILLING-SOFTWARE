@@ -1,0 +1,251 @@
+{% load static %}
+{% include "theme.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configured Service Order - GP Prints</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}?v=3">
+</head>
+<body>
+<div class="order-page">
+    <div class="order-header">
+        <div>
+            <h1>Configured Service Order</h1>
+            <p>Prices are taken from the active rules in Settings.</p>
+        </div>
+    </div>
+
+    <div class="order-section">
+        <h2>Customer</h2>
+        <input type="search" id="customer_search" class="order-search" placeholder="Search customer by name or phone" autocomplete="off">
+        <div id="customer_results" class="order-results"></div>
+        <button type="button" id="new_customer_button" class="new-customer-button" onclick="showNewCustomerForm()">+ New Customer</button>
+        <div id="newCustomerForm" class="new-customer-form" style="display:none;">
+            <h2>New Customer</h2>
+            <div class="customer-form-grid">
+                <div><label>Customer Name</label><input type="text" id="newCustomerName"></div>
+                <div><label>Phone</label><input type="text" id="newCustomerPhone"></div>
+                <div><label>Email</label><input type="email" id="newCustomerEmail"></div>
+                <div><label>Address</label><textarea id="newCustomerAddress"></textarea></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="order-section selected-box" id="selected_customer" style="display:none;">
+        <h2>Selected Customer</h2>
+        <p><strong>Name:</strong> <span id="customer_name"></span></p>
+        <p><strong>Phone:</strong> <span id="customer_phone"></span></p>
+        <p><strong>Email:</strong> <span id="customer_email"></span></p>
+        <p><strong>Address:</strong> <span id="customer_address"></span></p>
+    </div>
+
+    <div class="order-section configured-services-section">
+        <h2>Service Details</h2>
+        <p>Search a service, then select its configured category and quantity.</p>
+        <div class="customer-form-grid">
+            <div>
+                <label for="service_search">Search service</label>
+                <input type="search" id="service_search" class="order-search" placeholder="Search brochure, bill book...">
+                <div id="service_results" class="order-results"></div>
+            </div>
+            <div id="service_category_field" style="display:none;">
+                <label for="service_category">Category</label>
+                <select id="service_category"></select>
+            </div>
+            <div id="service_paper_size_field" style="display:none;">
+                <label for="service_paper_size">Paper size</label>
+                <select id="service_paper_size"></select>
+            </div>
+            <div id="service_gsm_field" style="display:none;">
+                <label for="service_gsm">GSM</label>
+                <select id="service_gsm"></select>
+            </div>
+            <div>
+                <label for="service_quantity">Configured quantity</label>
+                <select id="service_quantity" disabled><option>Select a service first</option></select>
+            </div>
+            <div id="service_side_field" style="display:none;">
+                <label for="service_side">Side</label>
+                <select id="service_side"></select>
+            </div>
+            <div class="configured-price-field">
+                <span class="configured-price-label">Configured price</span>
+                <strong id="configured_price">₹0.00</strong>
+            </div>
+        </div>
+        <button type="button" class="order-button" onclick="addConfiguredService()">Add Service to Cart</button>
+    </div>
+
+    <div class="cart-section">
+        <h2>Service Cart</h2>
+        <table class="cart-table">
+            <thead><tr><th>Service</th><th>Details</th><th>Rate</th><th>Quantity</th><th>Amount</th><th>Action</th></tr></thead>
+            <tbody id="cart_body"></tbody>
+        </table>
+        <div class="cart-total">Total: ₹<span id="cart_total">0.00</span></div>
+        <div class="generate-bill"><button type="button" onclick="generateBill()">Generate Bill</button></div>
+    </div>
+
+    <a href="{% url 'order_page' %}" class="order-back">← Change Order Type</a>
+</div>
+
+<script type="application/json" id="service-rules-data">{{ service_rules_json|safe }}</script>
+<script>
+    let selectedCustomer = null;
+    let cart = [];
+    const serviceRules = JSON.parse(document.getElementById("service-rules-data").textContent);
+
+    let selectedService = "";
+    let selectedRule = null;
+
+    document.getElementById("service_search").addEventListener("input", function() {
+        const query = this.value.trim().toLowerCase();
+        const services = [...new Set(serviceRules.map(rule => rule.service))]
+            .filter(service => service.toLowerCase().includes(query));
+        document.getElementById("service_results").innerHTML = query && services.length
+            ? services.map(service => `<button type="button" class="search-result" data-service="${escapeHtml(service)}"><strong>${escapeHtml(service)}</strong></button>`).join("")
+            : "";
+        document.querySelectorAll("#service_results .search-result").forEach(button => {
+            button.addEventListener("click", () => selectService(button.dataset.service));
+        });
+    });
+
+    function selectService(service) {
+        selectedService = service;
+        selectedRule = null;
+        document.getElementById("service_search").value = service;
+        document.getElementById("service_results").innerHTML = "";
+        configureRuleFields();
+    }
+
+    const ruleFields = [
+        {key: "variant", wrapper: "service_category_field", select: "service_category", label: "Category"},
+        {key: "paper_size", wrapper: "service_paper_size_field", select: "service_paper_size", label: "Paper size"},
+        {key: "gsm", wrapper: "service_gsm_field", select: "service_gsm", label: "GSM", suffix: " GSM"},
+        {key: "quantity", wrapper: null, select: "service_quantity", label: "Quantity"},
+        {key: "print_side", wrapper: "service_side_field", select: "service_side", label: "Side"},
+    ];
+
+    function configureRuleFields(changedField = null) {
+        let matches = serviceRules.filter(rule => rule.service === selectedService);
+        let resetFollowingFields = false;
+
+        ruleFields.forEach(field => {
+            const select = document.getElementById(field.select);
+            const wrapper = field.wrapper && document.getElementById(field.wrapper);
+            const values = [...new Set(matches.map(rule => String(rule[field.key] ?? "")).filter(Boolean))]
+                .sort((a, b) => field.key === "quantity" ? Number(a) - Number(b) : a.localeCompare(b));
+            const shouldShow = values.length > 0;
+
+            if (wrapper) wrapper.style.display = shouldShow ? "block" : "none";
+            select.disabled = !shouldShow;
+            if (!shouldShow) {
+                select.innerHTML = "";
+                matches = matches.filter(rule => !String(rule[field.key] ?? ""));
+                return;
+            }
+
+            const previousValue = !resetFollowingFields ? select.value : "";
+            select.innerHTML = values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}${field.suffix || ""}</option>`).join("");
+            select.value = values.includes(previousValue) ? previousValue : values[0];
+            matches = matches.filter(rule => String(rule[field.key] ?? "") === select.value);
+            if (field.select === changedField) resetFollowingFields = true;
+        });
+
+        selectedRule = matches[0] || null;
+        document.getElementById("configured_price").innerText = `₹${Number(selectedRule ? selectedRule.price : 0).toFixed(2)}`;
+    }
+
+    ruleFields.forEach(field => {
+        document.getElementById(field.select).addEventListener("change", () => configureRuleFields(field.select));
+    });
+
+    document.getElementById("customer_search").addEventListener("input", function() {
+        if (!this.value.trim()) {
+            document.getElementById("customer_results").innerHTML = "";
+            return;
+        }
+        fetch("{% url 'search_customer' %}?search=" + encodeURIComponent(this.value))
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("customer_results").innerHTML = data.customers.map(customer => `
+                    <button type="button" class="search-result" data-id="${customer.id}" data-name="${escapeHtml(customer.name)}" data-phone="${escapeHtml(customer.phone)}" data-email="${escapeHtml(customer.email)}" data-address="${escapeHtml(customer.address)}">
+                        <strong>${escapeHtml(customer.name)}</strong><br><span>Phone: ${escapeHtml(customer.phone)}</span>
+                    </button>`).join("");
+                document.querySelectorAll("#customer_results .search-result").forEach(button => {
+                    button.addEventListener("click", () => selectCustomer(button.dataset));
+                });
+            });
+    });
+
+    function escapeHtml(value) {
+        const element = document.createElement("span");
+        element.textContent = value || "";
+        return element.innerHTML;
+    }
+
+    function selectCustomer(customer) {
+        selectedCustomer = customer;
+        document.getElementById("customer_search").value = customer.name;
+        document.getElementById("customer_results").innerHTML = "";
+        document.getElementById("selected_customer").style.display = "block";
+        document.getElementById("customer_name").innerText = customer.name;
+        document.getElementById("customer_phone").innerText = customer.phone;
+        document.getElementById("customer_email").innerText = customer.email;
+        document.getElementById("customer_address").innerText = customer.address;
+    }
+
+    function addConfiguredService() {
+        if (!selectedRule) {
+            alert("Please select a service and configured quantity.");
+            return;
+        }
+        const detail = [selectedRule.variant, selectedRule.paper_size, selectedRule.gsm ? `${selectedRule.gsm} GSM` : "", selectedRule.quantity ? `${selectedRule.quantity} quantity` : "", selectedRule.print_side].filter(Boolean).join(" / ");
+        cart.push({rule_id: selectedRule.id, model_number: selectedRule.service, name: detail || selectedRule.service, price: Number(selectedRule.price), quantity: 1, selected_quantity: selectedRule.quantity});
+        displayCart();
+    }
+
+    function displayCart() {
+        let total = 0;
+        document.getElementById("cart_body").innerHTML = cart.map((item, index) => {
+            const amount = item.price * item.quantity;
+            total += amount;
+            return `<tr><td>${escapeHtml(item.model_number)}</td><td>${escapeHtml(item.name)}</td><td>₹${item.price.toFixed(2)}</td><td>${item.selected_quantity || "-"}</td><td>₹${amount.toFixed(2)}</td><td><button type="button" class="remove-button" onclick="removeFromCart(${index})">Remove</button></td></tr>`;
+        }).join("");
+        document.getElementById("cart_total").innerText = total.toFixed(2);
+    }
+
+    function removeFromCart(index) { cart.splice(index, 1); displayCart(); }
+
+    function generateBill() {
+        const newCustomer = {
+            name: document.getElementById("newCustomerName").value.trim(),
+            phone: document.getElementById("newCustomerPhone").value.trim(),
+            email: document.getElementById("newCustomerEmail").value.trim(),
+            address: document.getElementById("newCustomerAddress").value.trim()
+        };
+        if (!cart.length) { alert("Please add a service to the cart first."); return; }
+        if (!selectedCustomer && (!newCustomer.name || !newCustomer.phone)) { alert("Please select or add a customer first."); return; }
+
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "{% url 'billing_page' %}";
+        const values = {csrfmiddlewaretoken: "{{ csrf_token }}", cart: JSON.stringify(cart)};
+        if (selectedCustomer) values.customer_id = selectedCustomer.id;
+        else Object.assign(values, {new_customer_name: newCustomer.name, new_customer_phone: newCustomer.phone, new_customer_email: newCustomer.email, new_customer_address: newCustomer.address});
+        Object.entries(values).forEach(([name, value]) => {
+            const input = document.createElement("input"); input.type = "hidden"; input.name = name; input.value = value; form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function showNewCustomerForm() {
+        document.getElementById("newCustomerForm").style.display = "block";
+        document.getElementById("new_customer_button").style.display = "none";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Invoice Saved - GP Prints
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'users/style.css' %}"
+    >
+
+</head>
+
+
+<body>
+
+
+<div class="invoice-saved-page">
+
+
+    <div class="invoice-saved-box">
+
+
+        <div class="success-icon">
+            ✓
+        </div>
+
+
+        <h1>
+            Invoice Saved Successfully
+        </h1>
+
+
+        <p>
+
+            Invoice
+
+            <strong>
+                {{ bill.invoice_number }}
+            </strong>
+
+            has been saved.
+
+        </p>
+
+
+        <p>
+
+            PDF has been created inside the
+
+            <strong>
+                invoices
+            </strong>
+
+            folder.
+
+        </p>
+
+
+        <div class="saved-actions">
+
+
+            <a
+                href="{% url 'dashboard' %}"
+                class="billing-button"
+            >
+                Go to Dashboard
+            </a>
+
+
+            <a
+                href="{% url 'order_page' %}"
+                class="billing-back"
+            >
+                Create New Order
+            </a>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

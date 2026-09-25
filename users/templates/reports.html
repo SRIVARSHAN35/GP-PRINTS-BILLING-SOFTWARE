@@ -1,0 +1,70 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - GP Prints</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+</head>
+<body>
+
+<div class="report-page">
+    <header class="report-header">
+        <div>
+            <h1>Reports</h1>
+            <p>Completed bills from the Bill table</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="report-back">Back to Dashboard</a>
+    </header>
+
+    <section class="report-panel">
+        <div class="report-panel-heading">
+            <h2>All Bills</h2>
+            <span>{{ bills|length }} bill{{ bills|length|pluralize }}</span>
+        </div>
+
+        {% if bills %}
+        <div class="report-table-wrap">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Date</th>
+                        <th>Final Amount</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in bills %}
+                    <tr>
+                        <td><strong>{{ bill.invoice_number }}</strong></td>
+                        <td>{{ bill.customer_name }}</td>
+                        <td>{{ bill.customer_phone }}</td>
+                        <td>{{ bill.created_at|date:"d M Y, h:i A" }}</td>
+                        <td>₹{{ bill.final_amount|floatformat:2 }}</td>
+                        <td>
+                            {% if role == "admin" %}
+                                <a href="{% url 'edit_bill' bill.id %}" class="edit-btn">Edit</a>
+                                <a href="{% url 'delete_bill' bill.id %}" class="delete-btn" onclick="return confirm('Delete this bill?');">Delete</a>
+                            {% else %}
+                                <span class="view-only">View Only</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="report-empty">No bills have been completed yet.</div>
+        {% endif %}
+    </section>
+</div>
+
+</body>
+</html>

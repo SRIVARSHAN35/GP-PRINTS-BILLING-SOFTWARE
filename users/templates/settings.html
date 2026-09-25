@@ -1,0 +1,443 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - GP Prints</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}?v=3">
+    {% include "theme.html" %}
+</head>
+<body>
+
+<div class="report-page settings-page">
+    <header class="report-header">
+        <div>
+            <h1>GP Prints Settings</h1>
+            <p>Manage company information used on invoices.</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="report-back">Back to Dashboard</a>
+    </header>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="settings-message settings-message-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="settings-form">
+        {% csrf_token %}
+
+        <section class="settings-section">
+            <h2>Company Details</h2>
+            <div class="settings-grid">
+                <label>
+                    Company Name
+                    <input type="text" name="company_name" value="{{ settings_record.company_name }}" required>
+                </label>
+                <label>
+                    Main Color
+                    <input type="color" name="primary_color" value="{{ settings_record.primary_color|default:'#6D4AFF' }}">
+                    <small>Used for buttons, links, highlights, and navigation accents.</small>
+                </label>
+                <label>
+                    Phone
+                    <input type="text" name="phone" value="{{ settings_record.phone }}">
+                </label>
+                <label>
+                    Email
+                    <input type="email" name="email" value="{{ settings_record.email }}">
+                </label>
+                <label>
+                    Address
+                    <textarea name="address">{{ settings_record.address }}</textarea>
+                </label>
+            </div>
+
+            <div class="logo-upload">
+                <label>
+                    Company Logo
+                    <input type="file" name="logo" accept="image/*">
+                </label>
+                {% if settings_record.logo %}
+                    <img src="{{ settings_record.logo.url }}" alt="Current company logo">
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Invoice Settings</h2>
+            <div class="settings-grid">
+                <label>
+                    Invoice Prefix
+                    <input type="text" name="invoice_prefix" value="{{ settings_record.invoice_prefix }}" required>
+                </label>
+                <label>
+                    Default GST (%)
+                    <input type="number" step="0.01" name="default_gst" value="{{ settings_record.default_gst }}">
+                </label>
+                <label class="settings-wide">
+                    Invoice Footer
+                    <textarea name="invoice_footer">{{ settings_record.invoice_footer }}</textarea>
+                </label>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Printing Charges</h2>
+            <div class="settings-grid">
+                <label>A4 Single Page + Single Color<input type="number" step="0.01" name="A4_single_single" value="{{ settings_record.printing_charges.A4_single_single }}"></label>
+                <label>A4 Double Page + Single Color<input type="number" step="0.01" name="A4_single_double" value="{{ settings_record.printing_charges.A4_single_double }}"></label>
+                <label>A4 Single Page + Double Color<input type="number" step="0.01" name="A4_double_single" value="{{ settings_record.printing_charges.A4_double_single }}"></label>
+                <label>A4 Double Page + Double Color<input type="number" step="0.01" name="A4_double_double" value="{{ settings_record.printing_charges.A4_double_double }}"></label>
+                <label>A3 Single Page + Single Color<input type="number" step="0.01" name="A3_single_single" value="{{ settings_record.printing_charges.A3_single_single }}"></label>
+                <label>A3 Double Page + Single Color<input type="number" step="0.01" name="A3_single_double" value="{{ settings_record.printing_charges.A3_single_double }}"></label>
+                <label>A3 Single Page + Double Color<input type="number" step="0.01" name="A3_double_single" value="{{ settings_record.printing_charges.A3_double_single }}"></label>
+                <label>A3 Double Page + Double Color<input type="number" step="0.01" name="A3_double_double" value="{{ settings_record.printing_charges.A3_double_double }}"></label>
+                <label>Visiting Card<input type="number" step="0.01" name="visiting" value="{{ settings_record.printing_charges.visiting }}"></label>
+                <label>Custom Size<input type="number" step="0.01" name="custom" value="{{ settings_record.printing_charges.custom }}"></label>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Multicolor Printing Rates</h2>
+            <p>Each saved combination becomes an option in the multicolor order dropdowns. Enter 0 to disable a combination.</p>
+            <datalist id="multicolor-paper-sizes">
+                {% for rate in multicolor_rate_fields %}<option value="{{ rate.paper_size }}"></option>{% endfor %}
+            </datalist>
+            <datalist id="multicolor-gsm-values">
+                {% for rate in multicolor_rate_fields %}<option value="{{ rate.gsm }}"></option>{% endfor %}
+            </datalist>
+            <datalist id="multicolor-copy-values">
+                {% for rate in multicolor_rate_fields %}<option value="{{ rate.copies }}"></option>{% endfor %}
+            </datalist>
+            <div class="settings-table-wrap">
+                <table class="settings-table">
+                    <thead>
+                        <tr>
+                            <th>Paper Size</th>
+                            <th>GSM</th>
+                            <th>Copies</th>
+                            <th>Side</th>
+                            <th>Finish</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rate in multicolor_rate_fields %}
+                        <tr>
+                            <td><input type="text" name="multicolor_rate_{{ forloop.counter0 }}_paper_size" value="{{ rate.paper_size }}" list="multicolor-paper-sizes" required></td>
+                            <td><input type="text" name="multicolor_rate_{{ forloop.counter0 }}_gsm" value="{{ rate.gsm }}" list="multicolor-gsm-values" required></td>
+                            <td><input type="number" min="1" name="multicolor_rate_{{ forloop.counter0 }}_copies" value="{{ rate.copies }}" list="multicolor-copy-values" required></td>
+                            <td>
+                                <select name="multicolor_rate_{{ forloop.counter0 }}_side">
+                                    <option value="single" {% if rate.side == 'single' %}selected{% endif %}>Single</option>
+                                    <option value="double" {% if rate.side == 'double' %}selected{% endif %}>Double</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="multicolor_rate_{{ forloop.counter0 }}_finish">
+                                    <option value="standard" {% if rate.finish == 'standard' %}selected{% endif %}>Standard</option>
+                                    <option value="gloss" {% if rate.finish == 'gloss' %}selected{% endif %}>Gloss</option>
+                                    <option value="matt3d" {% if rate.finish == 'matt3d' %}selected{% endif %}>Matt 3D</option>
+                                    <option value="dripoff" {% if rate.finish == 'dripoff' %}selected{% endif %}>Drip-off</option>
+                                    <option value="uva" {% if rate.finish == 'uva' %}selected{% endif %}>UVA</option>
+                                </select>
+                            </td>
+                            <td><input type="number" min="0" step="0.01" name="multicolor_rate_{{ forloop.counter0 }}_price" value="{{ rate.value }}" required></td>
+                        </tr>
+                        {% endfor %}
+                        {% for index in "123" %}
+                        <tr>
+                            <td><input type="text" name="new_multicolor_{{ index }}_paper_size" placeholder="A4" list="multicolor-paper-sizes"></td>
+                            <td><input type="text" name="new_multicolor_{{ index }}_gsm" placeholder="300" list="multicolor-gsm-values"></td>
+                            <td><input type="number" min="1" name="new_multicolor_{{ index }}_copies" placeholder="500" list="multicolor-copy-values"></td>
+                            <td>
+                                <select name="new_multicolor_{{ index }}_side">
+                                    <option value="single">Single</option>
+                                    <option value="double">Double</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="new_multicolor_{{ index }}_finish">
+                                    <option value="gloss">Gloss</option>
+                                    <option value="matt3d">Matt 3D</option>
+                                    <option value="dripoff">Drip-off</option>
+                                    <option value="uva">UVA</option>
+                                </select>
+                            </td>
+                            <td><input type="number" min="0" step="0.01" name="new_multicolor_{{ index }}_price" value="0"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Design Charges</h2>
+            <div class="settings-grid">
+                <label>A4 Single<input type="number" step="0.01" name="A4_single" value="{{ settings_record.design_charges.A4_single }}"></label>
+                <label>A4 Double<input type="number" step="0.01" name="A4_double" value="{{ settings_record.design_charges.A4_double }}"></label>
+                <label>A3 Single<input type="number" step="0.01" name="A3_single" value="{{ settings_record.design_charges.A3_single }}"></label>
+                <label>A3 Double<input type="number" step="0.01" name="A3_double" value="{{ settings_record.design_charges.A3_double }}"></label>
+                <label>Visiting Card<input type="number" step="0.01" name="visiting" value="{{ settings_record.design_charges.visiting }}"></label>
+            </div>
+        </section>
+
+        <section class="settings-section">
+<h2>Configured Service Pricing</h2>
+            <p>Manage services used by the Configured Service order flow. Use Category to create the optional dropdown shown after a service is selected; leave it blank when no category is needed. Quantity and Price form the selectable price rule.</p>
+            <div class="settings-table-wrap">
+                <table class="settings-table">
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Category</th>
+                            <th>Paper Size</th>
+                            <th>GSM</th>
+                            <th>Quantity</th>
+                            <th>Side</th>
+                            <th>Price</th>
+                            <th>Active</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rule in pricing_rules %}
+                        <tr>
+                            <td><input name="rule_{{ rule.id }}_service" value="{{ rule.service }}" required></td>
+                            <td><input name="rule_{{ rule.id }}_variant" value="{{ rule.variant }}" placeholder="Optional category"></td>
+                            <td><input name="rule_{{ rule.id }}_paper_size" value="{{ rule.paper_size }}"></td>
+                            <td><input name="rule_{{ rule.id }}_gsm" value="{{ rule.gsm }}"></td>
+                            <td><input type="number" min="0" name="rule_{{ rule.id }}_quantity" value="{{ rule.quantity }}"></td>
+                            <td><input name="rule_{{ rule.id }}_print_side" value="{{ rule.print_side }}"></td>
+                            <td><input type="number" min="0" step="0.01" name="rule_{{ rule.id }}_price" value="{{ rule.price }}"></td>
+                            <td><input type="checkbox" name="rule_{{ rule.id }}_active" {% if rule.active %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="delete_pricing_rule" value="{{ rule.id }}"></td>
+                        </tr>
+                        {% endfor %}
+                        {% for index in "123" %}
+                        <tr>
+                            <td><input name="new_{{ index }}_service" placeholder="New service"></td>
+                            <td><input name="new_{{ index }}_variant" placeholder="Optional category"></td>
+                            <td><input name="new_{{ index }}_paper_size"></td>
+                            <td><input name="new_{{ index }}_gsm"></td>
+                            <td><input type="number" min="0" name="new_{{ index }}_quantity" value="0"></td>
+                            <td><input name="new_{{ index }}_print_side"></td>
+                            <td><input type="number" min="0" step="0.01" name="new_{{ index }}_price" value="0"></td>
+                            <td><input type="checkbox" name="new_{{ index }}_active" checked></td>
+                            <td></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Other Charges</h2>
+            <div class="settings-grid">
+                <label>Lamination<input type="number" step="0.01" name="lamination_charge" value="{{ settings_record.lamination_charge }}"></label>
+                <label>Embossing<input type="number" step="0.01" name="embossing_charge" value="{{ settings_record.embossing_charge }}"></label>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Pricing Rules</h2>
+            {% if not is_admin %}
+                <p>View-only access. Contact an admin to add or update pricing entries.</p>
+            {% endif %}
+            {% for category, rules in pricing_groups.items %}
+                <div class="pricing-rule-group">
+                    <h3>{{ category }}</h3>
+                    <div class="pricing-rule-list">
+                        {% for rule in rules %}
+                            <div class="pricing-rule-item">
+                                <div class="pricing-rule-main">
+                                    <strong>{{ rule.variant|default:rule.service }}</strong>
+                                    <span>{{ rule.paper_size }}{% if rule.gsm %} / {{ rule.gsm }} GSM{% endif %}{% if rule.quantity %} / {{ rule.quantity }}{% endif %}{% if rule.print_side %} / {{ rule.print_side }}{% endif %}</span>
+                                </div>
+                                <div class="pricing-rule-meta">
+                                    <span>₹{{ rule.price }}</span>
+                                    {% if rule.unit %}<span>{{ rule.unit }}</span>{% endif %}
+                                    {% if rule.description %}<span>{{ rule.description }}</span>{% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% empty %}
+                <p>No pricing rules saved yet.</p>
+            {% endfor %}
+
+            {% if is_admin %}
+                <div class="settings-actions add-field-row">
+                    <button type="button" class="save-customer-btn" id="show-add-field-form">+ Add New Field</button>
+                </div>
+            {% endif %}
+        </section>
+
+        {% if is_admin %}
+            <div class="settings-actions">
+                <button type="submit" class="save-customer-btn">Save Settings</button>
+            </div>
+        {% endif %}
+    </form>
+
+    <div id="email-change-modal" class="settings-modal hidden" aria-hidden="true">
+        <div class="settings-modal-dialog account-email-dialog">
+            <div class="settings-modal-header">
+                <h2>Change Email</h2>
+                <button type="button" id="close-email-modal" class="settings-modal-close" aria-label="Close">×</button>
+            </div>
+            <div id="email-request-panel" class="{% if pending_email_verification %}hidden{% endif %}">
+                <form method="POST" action="{% url 'request_email_change' %}" class="settings-form settings-modal-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" id="email-user-id">
+                    <label>Username<input type="text" id="email-username" readonly></label>
+                    <label>Current Email<input type="email" id="email-current" readonly></label>
+                    <label>New Email<input type="email" name="new_email" required></label>
+                    <div class="settings-actions"><button type="submit" class="save-customer-btn">Send Verification Code</button><button type="button" class="cancel-btn close-email-action">Cancel</button></div>
+                </form>
+            </div>
+            <div id="email-verify-panel" class="{% if not pending_email_verification %}hidden{% endif %}">
+                <form method="POST" action="{% url 'verify_email_change' %}" class="settings-form settings-modal-form">
+                    {% csrf_token %}
+                    <p>Enter the 6-digit code sent to the new email address. The code expires in 10 minutes.</p>
+                    <label>Verification Code<input type="text" name="verification_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label>
+                    <div class="settings-actions"><button type="submit" class="save-customer-btn">Verify</button><button type="button" class="cancel-btn close-email-action">Cancel</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if is_admin %}
+    <div id="add-field-modal" class="settings-modal hidden" aria-hidden="true">
+        <div class="settings-modal-dialog">
+            <div class="settings-modal-header">
+                <h2>Add New Pricing Field</h2>
+                <button type="button" id="close-add-field-modal" class="settings-modal-close" aria-label="Close">×</button>
+            </div>
+            <form method="POST" action="{% url 'add_pricing_rule' %}" class="settings-form settings-modal-form">
+                {% csrf_token %}
+                <div class="settings-grid">
+                    <label>
+                        Category
+                        <input type="text" name="service" placeholder="Visiting Card" required>
+                    </label>
+                    <label>
+                        Product / Item Name
+                        <input type="text" name="variant" placeholder="Premium Card">
+                    </label>
+                    <label>
+                        Size
+                        <input type="text" name="paper_size" placeholder="Custom">
+                    </label>
+                    <label>
+                        GSM / Paper Type
+                        <input type="text" name="gsm" placeholder="300 GSM">
+                    </label>
+                    <label>
+                        Quantity / Copies
+                        <input type="number" min="0" name="quantity" value="0">
+                    </label>
+                    <label>
+                        Print Type
+                        <input type="text" name="print_side" placeholder="S/S, D/S">
+                    </label>
+                    <label>
+                        Number of Books / Pads
+                        <input type="number" min="0" name="unit" placeholder="Optional">
+                    </label>
+                    <label>
+                        Price
+                        <input type="number" min="0" step="0.01" name="price" placeholder="1200" required>
+                    </label>
+                    <label class="settings-wide">
+                        Unit / Description
+                        <input type="text" name="description" placeholder="Premium visiting card">
+                    </label>
+                    <label class="settings-wide checkbox-inline">
+                        <span>Active / Available status</span>
+                        <input type="checkbox" name="active" checked>
+                    </label>
+                </div>
+                <div class="settings-actions">
+                    <button type="submit" class="save-customer-btn">Add Field</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const addFieldModal = document.getElementById('add-field-modal');
+    const showAddFieldButton = document.getElementById('show-add-field-form');
+    const closeAddFieldModal = document.getElementById('close-add-field-modal');
+
+    function toggleAddFieldModal(show) {
+        if (!addFieldModal) return;
+        addFieldModal.classList.toggle('hidden', !show);
+        addFieldModal.setAttribute('aria-hidden', String(!show));
+    }
+
+    showAddFieldButton?.addEventListener('click', function () {
+        toggleAddFieldModal(true);
+    });
+
+    closeAddFieldModal?.addEventListener('click', function () {
+        toggleAddFieldModal(false);
+    });
+
+    addFieldModal?.addEventListener('click', function (event) {
+        if (event.target === addFieldModal) {
+            toggleAddFieldModal(false);
+        }
+    });
+
+    const emailModal = document.getElementById('email-change-modal');
+    const emailRequestPanel = document.getElementById('email-request-panel');
+    const emailVerifyPanel = document.getElementById('email-verify-panel');
+
+    function toggleEmailModal(show) {
+        emailModal?.classList.toggle('hidden', !show);
+        emailModal?.setAttribute('aria-hidden', String(!show));
+        if (!show) {
+            emailRequestPanel?.classList.remove('hidden');
+            emailVerifyPanel?.classList.add('hidden');
+        }
+    }
+
+    document.querySelectorAll('.change-email-button').forEach(function (button) {
+        button.addEventListener('click', function () {
+            document.getElementById('email-user-id').value = button.dataset.userId;
+            document.getElementById('email-username').value = button.dataset.username;
+            document.getElementById('email-current').value = button.dataset.email || '';
+            toggleEmailModal(true);
+        });
+    });
+
+    document.getElementById('close-email-modal')?.addEventListener('click', function () {
+        toggleEmailModal(false);
+    });
+
+    document.querySelectorAll('.close-email-action').forEach(function (button) {
+        button.addEventListener('click', function () {
+            toggleEmailModal(false);
+        });
+    });
+
+    emailModal?.addEventListener('click', function (event) {
+        if (event.target === emailModal) toggleEmailModal(false);
+    });
+
+    {% if pending_email_verification %}
+        toggleEmailModal(true);
+    {% endif %}
+</script>
+    {% endif %}
+
+</body>
+</html>

@@ -1,0 +1,1337 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Create Order - GP Prints</title>
+
+    <link rel="stylesheet"
+            href="{% static 'users/style.css' %}?v=3">
+
+</head>
+
+
+<body>
+
+
+<div class="order-page">
+
+
+    <!-- =========================
+         HEADER
+         ========================= -->
+
+    <div class="order-header">
+
+        <div>
+
+            <h1>
+                Create Order
+            </h1>
+
+            <p>
+                Select customer and cards for the order
+            </p>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================
+         CUSTOMER SEARCH
+         ========================= -->
+
+    <div class="order-section">
+
+    <h2>
+        Customer
+    </h2>
+
+    <input
+        type="text"
+        id="customer_search"
+        class="order-search"
+        placeholder="Search customer by name or phone"
+        autocomplete="off"
+    >
+
+    <div
+        id="customer_results"
+        class="order-results"
+    ></div>
+
+    <button
+        type="button"
+        id="new_customer_button"
+        class="new-customer-button"
+        onclick="showNewCustomerForm()"
+    >
+        + New Customer
+    </button>
+
+    <div
+    id="newCustomerForm"
+    class="new-customer-form"
+    style="display: none;"
+>
+
+    <h2>New Customer</h2>
+
+    <div class="customer-form-grid">
+
+        <div>
+            <label>Customer Name</label>
+
+            <input
+                type="text"
+                id="newCustomerName"
+                placeholder="Enter customer name"
+            >
+        </div>
+
+
+        <div>
+            <label>Phone</label>
+
+            <input
+                type="text"
+                id="newCustomerPhone"
+                placeholder="Enter phone number"
+            >
+        </div>
+
+
+        <div>
+            <label>Email</label>
+
+            <input
+                type="email"
+                id="newCustomerEmail"
+                placeholder="Enter email"
+            >
+        </div>
+
+
+        <div>
+            <label>Address</label>
+
+            <textarea
+                id="newCustomerAddress"
+                placeholder="Enter address"
+            ></textarea>
+        </div>
+
+    </div>
+
+
+    <div class="new-customer-actions">
+
+        <button
+            type="button"
+            onclick="saveNewCustomer()"
+            class="save-customer-button"
+        >
+            Save Customer
+        </button>
+
+        <button
+            type="button"
+            onclick="hideNewCustomerForm()"
+            class="cancel-customer-button"
+        >
+            Cancel
+        </button>
+
+    </div>
+
+</div>
+
+</div>
+
+
+    <!-- =========================
+         SELECTED CUSTOMER
+         ========================= -->
+
+    <div
+        class="order-section selected-box"
+        id="selected_customer"
+        style="display:none;"
+    >
+
+        <h2>
+            Selected Customer
+        </h2>
+
+        <p>
+            <strong>Name:</strong>
+            <span id="customer_name"></span>
+        </p>
+
+        <p>
+            <strong>Phone:</strong>
+            <span id="customer_phone"></span>
+        </p>
+
+        <p>
+            <strong>Email:</strong>
+            <span id="customer_email"></span>
+        </p>
+
+        <p>
+            <strong>Address:</strong>
+            <span id="customer_address"></span>
+        </p>
+
+    </div>
+
+
+
+    <!-- =========================
+         CARD SEARCH
+         ========================= -->
+
+    <div class="order-section">
+
+        <h2>
+            Search Card
+        </h2>
+
+        <input
+            type="text"
+            id="product_search"
+            class="order-search"
+            placeholder="Search by Model Number or Card Name"
+            autocomplete="off"
+        >
+
+        <div
+            id="product_results"
+            class="order-results"
+        ></div>
+
+    </div>
+
+    <!-- =========================
+         SELECTED CARD
+         ========================= -->
+
+    <div
+        class="order-section"
+        id="selected_product"
+        style="display:none;"
+    >
+
+        <h2>
+            Selected Card
+        </h2>
+
+
+        <div class="card-details">
+
+
+            <div class="card-detail">
+
+                <strong>
+                    Model Number
+                </strong>
+
+                <span id="product_model"></span>
+
+            </div>
+
+
+            <div class="card-detail">
+
+                <strong>
+                    Card Name
+                </strong>
+
+                <span id="product_name"></span>
+
+            </div>
+
+
+            <div class="card-detail">
+
+                <strong>
+                    Category
+                </strong>
+
+                <span id="product_category"></span>
+
+            </div>
+
+
+            <div class="card-detail">
+
+                <strong>
+                    Paper Type
+                </strong>
+
+                <span id="product_paper"></span>
+
+            </div>
+
+
+            <div class="card-detail">
+
+                <strong>
+                    Paper Size
+                </strong>
+
+                <span id="product_size"></span>
+
+            </div>
+
+
+            <div class="card-detail">
+
+                <strong>
+                    Print Type
+                </strong>
+
+                <span id="product_print"></span>
+
+            </div>
+
+
+            <div class="card-detail">
+
+                <strong>
+                    Price
+                </strong>
+
+                ₹<span id="product_price"></span>
+
+            </div>
+
+
+            <div class="card-detail">
+
+                <strong>
+                    Status
+                </strong>
+
+                <span id="product_status"></span>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- QUANTITY -->
+
+        <div class="quantity-box">
+
+            <label>
+                Quantity
+            </label>
+
+            <input
+                type="number"
+                id="product_quantity"
+                min="1"
+                value="1"
+            >
+
+        </div>
+
+
+        <br>
+
+
+        <button
+            type="button"
+            class="order-button"
+            onclick="addToCart()"
+        >
+            Add to Cart
+        </button>
+
+    </div>
+
+
+
+    <!-- =========================
+         CART
+         ========================= -->
+
+    <div class="cart-section">
+
+        <h2>
+            Current Bill
+        </h2>
+
+
+        <table class="cart-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Model No
+                    </th>
+
+                    <th>
+                        Card Name
+                    </th>
+
+                    <th>
+                        Price
+                    </th>
+
+                    <th>
+                        Quantity
+                    </th>
+
+                    <th>
+                        Amount
+                    </th>
+
+                    <th>
+                        Action
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="cart_body">
+
+            </tbody>
+
+        </table>
+
+
+
+        <!-- TOTAL -->
+
+        <div class="cart-total">
+
+            Subtotal:
+            ₹<span id="cart_total">
+                0.00
+            </span>
+
+        </div>
+
+
+
+        <!-- GENERATE BILL -->
+
+        <div class="generate-bill">
+
+            <button
+                type="button"
+                onclick="generateBill()"
+            >
+                Generate Bill
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================
+         BACK
+         ========================= -->
+
+    <a
+        href="{% url 'dashboard' %}"
+        class="order-back"
+    >
+        ← Back to Dashboard
+    </a>
+
+
+</div>
+
+
+<script>
+
+
+    // =========================
+    // CART
+    // =========================
+
+    let cart = [];
+
+    let selectedCustomer = null;
+
+    let selectedProduct = null;
+    // =========================
+    // CUSTOMER SEARCH
+    // =========================
+
+    document.getElementById(
+        "customer_search"
+    ).addEventListener(
+        "input",
+        function() {
+
+            let search = this.value;
+
+
+            if (search.length < 1) {
+
+                document.getElementById(
+                    "customer_results"
+                ).innerHTML = "";
+
+                return;
+
+            }
+
+
+            fetch(
+                "{% url 'search_customer' %}?search=" +
+                encodeURIComponent(search)
+            )
+
+            .then(
+                response => response.json()
+            )
+
+            .then(
+                data => {
+
+                    let result = "";
+
+
+                    data.customers.forEach(
+                        function(customer) {
+
+                            result += `
+
+                                <div
+                                    class="search-result"
+                                    onclick="selectCustomer(
+                                        ${customer.id},
+                                        '${customer.name}',
+                                        '${customer.phone}',
+                                        '${customer.email}',
+                                        '${customer.address}'
+                                    )"
+                                >
+
+                                    <strong>
+                                        ${customer.name}
+                                    </strong>
+
+                                    <br>
+
+                                    <span>
+                                        Phone:
+                                        ${customer.phone}
+                                    </span>
+
+                                    <br>
+
+                                    <span>
+                                        Email:
+                                        ${customer.email}
+                                    </span>
+
+                                </div>
+
+                            `;
+
+                        }
+                    );
+
+
+                    document.getElementById(
+                        "customer_results"
+                    ).innerHTML = result;
+
+                }
+            );
+
+        }
+    );
+
+
+
+    // =========================
+    // SELECT CUSTOMER
+    // =========================
+
+    function selectCustomer(
+        id,
+        name,
+        phone,
+        email,
+        address
+    ) {
+
+        selectedCustomer = {
+
+            id: id,
+
+            name: name,
+
+            phone: phone,
+
+            email: email,
+
+            address: address
+
+        };
+
+
+        document.getElementById(
+            "customer_search"
+        ).value = name;
+
+
+        document.getElementById(
+            "customer_results"
+        ).innerHTML = "";
+
+
+        document.getElementById(
+            "selected_customer"
+        ).style.display = "block";
+
+
+        document.getElementById(
+            "customer_name"
+        ).innerText = name;
+
+
+        document.getElementById(
+            "customer_phone"
+        ).innerText = phone;
+
+
+        document.getElementById(
+            "customer_email"
+        ).innerText = email;
+
+
+        document.getElementById(
+            "customer_address"
+        ).innerText = address;
+
+    }
+
+
+
+    // =========================
+    // PRODUCT SEARCH
+    // =========================
+
+    document.getElementById(
+        "product_search"
+    ).addEventListener(
+        "input",
+        function() {
+
+            let search = this.value;
+
+
+            if (search.length < 1) {
+
+                document.getElementById(
+                    "product_results"
+                ).innerHTML = "";
+
+                return;
+
+            }
+
+
+            fetch(
+                "{% url 'search_product' %}?search=" +
+                encodeURIComponent(search)
+            )
+
+            .then(
+                response => response.json()
+            )
+
+            .then(
+                data => {
+
+                    let result = "";
+
+
+                    data.products.forEach(
+                        function(product) {
+
+                            result += `
+
+                                <div
+                                    class="search-result"
+                                    onclick="selectProduct(
+                                        ${product.id},
+                                        '${product.model_number}',
+                                        '${product.name}',
+                                        '${product.category}',
+                                        '${product.paper_type}',
+                                        '${product.paper_size}',
+                                        '${product.print_type}',
+                                        '${product.price}',
+                                        '${product.stock}'
+                                    )"
+                                >
+
+                                    <strong>
+                                        ${product.model_number}
+                                    </strong>
+
+                                    -
+                                    ${product.name}
+
+                                    <br>
+
+                                    <span>
+                                        Category:
+                                        ${product.category}
+                                    </span>
+
+                                    <br>
+
+                                    <span>
+                                        Price:
+                                        ₹${product.price}
+                                    </span>
+
+                                    <br>
+
+                                    <span>
+                                        Status:
+                                        ${product.stock > 0
+                                            ? "Available"
+                                            : "Out of Stock"}
+                                    </span>
+
+                                </div>
+
+                            `;
+
+                        }
+                    );
+
+
+                    document.getElementById(
+                        "product_results"
+                    ).innerHTML = result;
+
+                }
+            );
+
+        }
+    );
+
+
+
+    // =========================
+    // SELECT PRODUCT
+    // =========================
+
+    function selectProduct(
+        id,
+        model_number,
+        name,
+        category,
+        paper_type,
+        paper_size,
+        print_type,
+        price,
+        stock
+    ) {
+
+        selectedProduct = {
+
+            id: id,
+
+            model_number: model_number,
+
+            name: name,
+
+            category: category,
+
+            paper_type: paper_type,
+
+            paper_size: paper_size,
+
+            print_type: print_type,
+
+            price: parseFloat(price),
+
+            stock: parseInt(stock)
+
+        };
+
+
+        document.getElementById(
+            "product_search"
+        ).value =
+            model_number + " - " + name;
+
+
+        document.getElementById(
+            "product_results"
+        ).innerHTML = "";
+
+
+        document.getElementById(
+            "selected_product"
+        ).style.display = "block";
+
+
+        document.getElementById(
+            "product_model"
+        ).innerText = model_number;
+
+
+        document.getElementById(
+            "product_name"
+        ).innerText = name;
+
+
+        document.getElementById(
+            "product_category"
+        ).innerText = category;
+
+
+        document.getElementById(
+            "product_paper"
+        ).innerText = paper_type;
+
+
+        document.getElementById(
+            "product_size"
+        ).innerText = paper_size;
+
+
+        document.getElementById(
+            "product_print"
+        ).innerText = print_type;
+
+
+        document.getElementById(
+            "product_price"
+        ).innerText = price;
+
+
+        document.getElementById(
+            "product_status"
+        ).innerText =
+            stock > 0
+                ? "Available"
+                : "Out of Stock";
+
+
+        document.getElementById(
+            "product_quantity"
+        ).value = 1;
+
+    }
+
+
+    // =========================
+    // ADD TO CART
+    // =========================
+
+    function addToCart() {
+
+        let hasNewCustomer =
+            document.getElementById("newCustomerName").value.trim() !== "" &&
+            document.getElementById("newCustomerPhone").value.trim() !== "";
+
+        if (!selectedCustomer && !hasNewCustomer) {
+
+            alert(
+                "Please select a customer or enter new customer details first."
+            );
+
+            return;
+
+        }
+
+
+        if (!selectedProduct) {
+
+            alert(
+                "Please select a card."
+            );
+
+            return;
+
+        }
+
+
+        let quantity =
+            parseInt(
+                document.getElementById(
+                    "product_quantity"
+                ).value
+            );
+
+
+        if (quantity < 1) {
+
+            alert(
+                "Quantity must be at least 1."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            selectedProduct.stock < quantity
+        ) {
+
+            alert(
+                "Not enough stock available."
+            );
+
+            return;
+
+        }
+
+
+        cart.push({
+
+            id: selectedProduct.id,
+
+            model_number:
+                selectedProduct.model_number,
+
+            name:
+                selectedProduct.name,
+
+            price:
+                selectedProduct.price,
+
+            category:
+                selectedProduct.category,
+
+            paper_type:
+                selectedProduct.paper_type,
+
+            paper_size:
+                selectedProduct.paper_size,
+
+            print_type:
+                selectedProduct.print_type,
+
+            quantity:
+                quantity
+
+        });
+
+
+        displayCart();
+
+    }
+
+
+    // =========================
+    // DISPLAY CART
+    // =========================
+
+    function displayCart() {
+
+        let body =
+            document.getElementById(
+                "cart_body"
+            );
+
+
+        body.innerHTML = "";
+
+
+        let total = 0;
+
+
+        cart.forEach(
+            function(item, index) {
+
+                let amount =
+                    Number(item.price) *
+                    item.quantity;
+
+
+                total += amount;
+
+
+                body.innerHTML += `
+
+                    <tr>
+
+                        <td>
+                            ${item.model_number}
+                        </td>
+
+                        <td>
+                            ${item.name}
+                        </td>
+
+                        <td>
+                            ₹${Number(item.price).toFixed(2)}
+                        </td>
+
+                        <td>
+                            ${item.quantity}
+                        </td>
+
+                        <td>
+                            ₹${amount.toFixed(2)}
+                        </td>
+
+                        <td>
+
+                            <button
+                                type="button"
+                                class="remove-button"
+                                onclick="removeFromCart(${index})"
+                            >
+                                Remove
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+            }
+        );
+
+        document.getElementById(
+            "cart_total"
+        ).innerText =
+            total.toFixed(2);
+
+    }
+
+
+
+    // =========================
+    // REMOVE FROM CART
+    // =========================
+
+    function removeFromCart(index) {
+
+        cart.splice(index, 1);
+
+        displayCart();
+
+    }
+
+
+
+    // =========================
+    // GENERATE BILL
+    // =========================
+
+function generateBill() {
+
+    if (cart.length === 0) {
+
+        alert(
+            "Please add at least one card."
+        );
+
+        return;
+
+    }
+
+    let newCustomer = null;
+
+    if (!selectedCustomer) {
+
+        newCustomer = {
+            name: document.getElementById("newCustomerName").value.trim(),
+            phone: document.getElementById("newCustomerPhone").value.trim(),
+            email: document.getElementById("newCustomerEmail").value.trim(),
+            address: document.getElementById("newCustomerAddress").value.trim()
+        };
+
+        if (!newCustomer.name || !newCustomer.phone) {
+
+            alert("Please enter customer name and phone number.");
+
+            return;
+
+        }
+
+    }
+
+
+    let form =
+        document.createElement("form");
+
+    form.method = "POST";
+
+    form.action =
+        "{% url 'billing_page' %}";
+
+
+    // CSRF TOKEN
+
+    let csrf =
+        document.createElement("input");
+
+    csrf.type = "hidden";
+
+    csrf.name =
+        "csrfmiddlewaretoken";
+
+    csrf.value =
+        "{{ csrf_token }}";
+
+    form.appendChild(csrf);
+
+
+    // CUSTOMER ID
+
+    let customer =
+        document.createElement("input");
+
+    customer.type = "hidden";
+
+    customer.name =
+        "customer_id";
+
+    if (selectedCustomer) {
+
+        customer.value =
+            selectedCustomer.id;
+
+        form.appendChild(customer);
+
+    }
+
+    if (newCustomer) {
+
+        Object.entries({
+            new_customer_name: newCustomer.name,
+            new_customer_phone: newCustomer.phone,
+            new_customer_email: newCustomer.email,
+            new_customer_address: newCustomer.address
+        }).forEach(([name, value]) => {
+
+            let input = document.createElement("input");
+
+            input.type = "hidden";
+            input.name = name;
+            input.value = value;
+
+            form.appendChild(input);
+
+        });
+
+    }
+
+
+    // CART DATA
+
+    let cartInput =
+        document.createElement("input");
+
+    cartInput.type = "hidden";
+
+    cartInput.name =
+        "cart";
+
+    cartInput.value =
+        JSON.stringify(cart);
+
+    form.appendChild(cartInput);
+
+    document.body.appendChild(form);
+
+
+    form.submit();
+
+}
+
+</script>
+<script>
+    function showNewCustomerForm() {
+
+        document.getElementById("newCustomerForm").style.display = "block";
+
+    document.getElementById("new_customer_button").style.display = "none";
+
+}
+
+
+function hideNewCustomerForm() {
+
+    document.getElementById("newCustomerForm").style.display = "none";
+
+    document.getElementById("new_customer_button").style.display = "block";
+
+}
+
+
+function saveNewCustomer() {
+
+    let name = document.getElementById("new_customer_name").value.trim();
+    let phone = document.getElementById("new_customer_phone").value.trim();
+    let email = document.getElementById("new_customer_email").value.trim();
+    let address = document.getElementById("new_customer_address").value.trim();
+
+
+    if (name === "") {
+
+        alert("Please enter customer name.");
+        return;
+
+    }
+
+
+    if (phone === "") {
+
+        alert("Please enter customer phone number.");
+        return;
+
+    }
+
+
+    let formData = new FormData();
+
+    formData.append("name", name);
+    formData.append("phone", phone);
+    formData.append("email", email);
+    formData.append("address", address);
+
+
+    fetch("{% url 'save_new_customer' %}", {
+
+        method: "POST",
+
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+
+        body: formData
+
+    })
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        if (data.success) {
+
+            alert("Customer saved successfully!");
+
+
+            // Select the newly created customer
+
+            selectedCustomer = data.customer;
+
+
+            // Show selected customer
+
+            document.getElementById("customer_results").innerHTML = `
+
+                <div class="customer-result selected">
+
+                    <strong>${data.customer.name}</strong>
+
+                    <br>
+
+                    ${data.customer.phone}
+
+                </div>
+
+            `;
+
+
+            // Hide new customer form
+
+            document.getElementById("newCustomerForm").style.display = "none";
+
+
+            // Clear form
+
+            document.getElementById("newCustomerName").value = "";
+            document.getElementById("newCustomerPhone").value = "";
+            document.getElementById("newCustomerEmail").value = "";
+            document.getElementById("newCustomerAddress").value = "";
+
+
+            // Show New Customer button again
+
+            document.getElementById("new_customer_button").style.display = "block";
+
+        }
+
+        else {
+
+            alert(data.message);
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.error(error);
+
+        alert("Something went wrong while saving the customer.");
+
+    });
+
+}
+
+function getCookie(name) {
+
+    let cookieValue = null;
+
+    if (document.cookie && document.cookie !== "") {
+
+        const cookies = document.cookie.split(";");
+
+        for (let cookie of cookies) {
+
+            cookie = cookie.trim();
+
+            if (cookie.substring(0, name.length + 1) === (name + "=")) {
+
+                cookieValue = decodeURIComponent(
+                    cookie.substring(name.length + 1)
+                );
+
+                break;
+
+            }
+
+        }
+
+    }
+
+    return cookieValue;
+}
+</script>
+
+
+</body>
+
+</html>

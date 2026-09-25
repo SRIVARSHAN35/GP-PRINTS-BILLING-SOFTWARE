@@ -1,0 +1,1061 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>{% if invoice_type == "multicolor" %}Multicolor Invoice{% elif invoice_type == "configured_service" %}Configured Service Invoice{% else %}Invoice{% endif %} - {{ invoice_number }}</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 18px;
+            background: #f1f3f6;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #222;
+        }
+
+        .invoice-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: auto;
+            background: white;
+            padding: 24px 30px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ================= HEADER ================= */
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 13px;
+            border-bottom: 2px solid #222;
+        }
+
+        .company-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .company-logo {
+            width: 62px;
+            height: 62px;
+            object-fit: contain;
+        }
+
+        .company-name {
+            font-size: 29px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        .company-subtitle {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .invoice-title {
+            text-align: right;
+        }
+
+        .invoice-title h1 {
+            margin: 0;
+            font-size: 31px;
+            letter-spacing: 2px;
+        }
+
+        .invoice-number {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        /* ================= INFO ================= */
+
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 24px;
+            margin-bottom: 24px;
+        }
+
+        .info-box {
+            width: 48%;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .customer-name {
+            font-size: 19px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .info-text {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        /* ================= TABLE ================= */
+
+        .section-heading {
+            font-size: 17px;
+            font-weight: bold;
+            margin-top: 22px;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #222;
+            color: white;
+            padding: 10px 8px;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ddd;
+            font-size: 11px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* ================= DETAILS ================= */
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 7px 22px;
+            margin-top: 5px;
+            padding: 9px 11px;
+            background: #f7f7f7;
+            border: 1px solid #e2e2e2;
+        }
+
+        .detail-item {
+            font-size: 12px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        /* ================= BILL SUMMARY ================= */
+
+        .summary-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .summary {
+            width: 350px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 0;
+            font-size: 12px;
+        }
+
+        .summary-row.subtotal {
+            border-top: 1px solid #ccc;
+            margin-top: 5px;
+            padding-top: 7px;
+            font-weight: bold;
+        }
+
+        .summary-row.total {
+            margin-top: 10px;
+            padding: 13px 0;
+            background: white;
+            color: #000000;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .summary-row.total span {
+            color: #000000 !important;
+        }
+
+        /* ================= FOOTER ================= */
+
+        .footer {
+            margin-top: auto;
+            padding-top: 24px;
+            padding-bottom: 14px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .thank-you {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .footer-text {
+            font-size: 11px;
+            color: #777;
+        }
+
+        /* ================= BUTTONS ================= */
+
+        .invoice-actions {
+            width: 210mm;
+            margin: 20px auto 0;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .invoice-actions button,
+        .invoice-actions a {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .save-button {
+            background: #222;
+            color: white;
+        }
+
+        .print-button {
+            background: #555;
+            color: white;
+        }
+
+        .back-button {
+            background: #ddd;
+            color: #222;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 8px;
+            }
+
+            .invoice-container {
+                padding: 18px 16px;
+            }
+
+            .invoice-header,
+            .info-section {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .invoice-title {
+                width: 100%;
+                text-align: left;
+            }
+
+            .info-box {
+                width: 100%;
+            }
+
+            .invoice-actions {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+        }
+
+        /* ================= PRINT ================= */
+
+        @media print {
+
+            body {
+                padding: 0;
+                margin: 0;
+                background: white;
+            }
+
+            .invoice-container {
+                width: 210mm;
+                min-height: 297mm;
+                box-sizing: border-box;
+                padding: 15mm 16mm 13mm;
+                box-shadow: none;
+                margin: 0;
+            }
+
+            .invoice-header {
+                padding-bottom: 14px;
+            }
+
+            .company-logo {
+                width: 72px;
+                height: 72px;
+            }
+
+            .company-name {
+                font-size: 29px !important;
+            }
+
+            .company-subtitle {
+                font-size: 12px;
+            }
+
+            .invoice-number {
+                font-size: 12px;
+            }
+
+            .invoice-title h1 {
+                font-size: 30px !important;
+            }
+
+            .info-section {
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+
+            .section-title {
+                margin-bottom: 7px;
+                font-size: 13px;
+            }
+
+            .customer-name {
+                font-size: 18px;
+                margin-bottom: 6px;
+            }
+
+            .info-text {
+                font-size: 12px !important;
+                line-height: 1.55;
+            }
+
+            .section-heading {
+                font-size: 16px !important;
+                margin-top: 19px;
+                margin-bottom: 9px;
+            }
+
+            th,
+            td {
+                padding: 9px 7px;
+                font-size: 11px !important;
+            }
+
+            .details-grid {
+                gap: 8px 20px;
+                margin-top: 7px;
+                padding: 11px;
+            }
+
+            .detail-item {
+                font-size: 12px;
+            }
+
+            .summary-wrapper {
+                margin-top: 20px;
+            }
+
+            .summary-row {
+                padding: 6px 0;
+                font-size: 12px !important;
+            }
+
+            .summary-row.subtotal {
+                margin-top: 3px;
+                padding-top: 8px;
+            }
+
+            .summary-row.total {
+                margin-top: 8px;
+                padding: 12px 0;
+                font-size: 19px !important;
+            }
+
+            .footer {
+                margin-top: auto;
+                padding-top: 18px;
+                padding-bottom: 8px;
+            }
+
+            .thank-you {
+                font-size: 15px;
+                margin-bottom: 5px;
+            }
+
+            .footer-text {
+                font-size: 11px;
+            }
+
+            .invoice-actions {
+                display: none;
+            }
+
+            @page {
+                size: A4;
+                margin: 0;
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="invoice-container">
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="invoice-header">
+
+        <div class="company-section">
+
+            {% if company_settings and company_settings.logo %}
+                <img
+                    src="{{ company_settings.logo.url }}"
+                    class="company-logo"
+                    alt="{{ company_settings.company_name }} Logo"
+                >
+            {% else %}
+                <img
+                    src="{% static 'images/gp-logo.png' %}"
+                    class="company-logo"
+                    alt="GP Prints Logo"
+                >
+            {% endif %}
+
+            <div>
+
+                <div class="company-name">
+                    {{ company_settings.company_name|default:"GP PRINTS" }}
+                </div>
+
+                <div class="company-subtitle">
+                    Professional Printing Solutions
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="invoice-title">
+
+            <h1>INVOICE</h1>
+
+            <div class="invoice-number">
+                Invoice No:
+                <strong>{{ invoice_number }}</strong>
+            </div>
+
+            <div class="invoice-number">
+                Date:
+                <strong>{{ invoice_date }}</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= CUSTOMER ================= -->
+
+    <div class="info-section">
+
+        <div class="info-box">
+
+            <div class="section-title">
+                Bill To
+            </div>
+
+            <div class="customer-name">
+                {{ customer.name }}
+            </div>
+
+            <div class="info-text">
+
+                {% if customer.phone %}
+                    Phone: {{ customer.phone }}<br>
+                {% endif %}
+
+                {% if customer.email %}
+                    Email: {{ customer.email }}<br>
+                {% endif %}
+
+                {% if customer.address %}
+                    Address: {{ customer.address }}
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <div class="info-box">
+
+            <div class="section-title">
+                Invoice Details
+            </div>
+
+            <div class="info-text">
+
+                Invoice No:
+                <strong>{{ invoice_number }}</strong>
+                <br>
+
+                Total Copies:
+                <strong>{{ bill.copies }}</strong>
+                <br>
+
+                Payment Status:
+                <strong>Pending</strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {% if cart %}
+
+    <!-- ================= PRODUCTS ================= -->
+
+    <div class="section-heading">
+        Product Details
+    </div>
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>Model No.</th>
+
+                <th>Product</th>
+
+                <th>Category</th>
+
+                <th class="text-center">
+                    Qty
+                </th>
+
+                <th class="text-right">
+                    Price
+                </th>
+
+                <th class="text-right">
+                    Amount
+                </th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for item in cart %}
+
+            <tr>
+
+                <td>
+                    {{ item.model_number }}
+                </td>
+
+                <td>
+                    {{ item.name }}
+                </td>
+
+                <td>
+                    {{ item.category }}
+                </td>
+
+                <td class="text-center">
+                    {{ item.selected_quantity|default:item.quantity }}
+                </td>
+
+                <td class="text-right">
+                    ₹{{ item.price }}
+                </td>
+
+                <td class="text-right">
+                    ₹{{ item.amount }}
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    {% endif %}
+
+
+    {% if bill.multicolor_items %}
+
+    <div class="section-heading">
+        Multicolor Printing Items
+    </div>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Paper Size</th>
+                <th>GSM</th>
+                <th class="text-center">Copies</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in bill.multicolor_items %}
+            <tr>
+                <td>{{ item.paper_size }}</td>
+                <td>{{ item.gsm }} GSM</td>
+                <td class="text-center">{{ item.copies }}</td>
+                <td class="text-right">₹{{ item.amount|default:"0.00" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+
+    {% endif %}
+
+
+    {% if invoice_type == "cards" or not invoice_type %}
+
+    <!-- ================= PRINTING DETAILS ================= -->
+
+    <div class="section-heading">
+        Printing Details
+    </div>
+
+    <div class="details-grid">
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Paper Size:
+            </span>
+
+            {{ bill.paper_size|default:"-" }}
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Copies:
+            </span>
+
+            {{ bill.copies|default:"0" }}
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Printing Color:
+            </span>
+
+            {{ bill.printing_color|default:"-" }}
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Printing Pages:
+            </span>
+
+            {{ bill.printing_page|default:"-" }}
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Printing Charge:
+            </span>
+
+            ₹{{ bill.printing_charge|default:"0.00" }}
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= DESIGN DETAILS ================= -->
+
+    <div class="section-heading">
+        Design Details
+    </div>
+
+    <div class="details-grid">
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Design Required:
+            </span>
+
+            {{ bill.design_required|default:"No" }}
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Design Pages:
+            </span>
+
+            {{ bill.design_page|default:"-" }}
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Design Charge:
+            </span>
+
+            ₹{{ bill.design_charge|default:"0.00" }}
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Lamination:
+            </span>
+
+            ₹{{ bill.lamination|default:"0.00" }}
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Embossing:
+            </span>
+
+            ₹{{ bill.embossing|default:"0.00" }}
+
+        </div>
+
+    </div>
+
+
+    {% endif %}
+
+    <!-- ================= SUMMARY ================= -->
+
+    <div class="summary-wrapper">
+
+        <div class="summary">
+
+            <div class="summary-row">
+
+                <span>
+                    Product Total
+                </span>
+
+                <span>
+                    ₹{{ bill.card_total }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Printing Charge
+                </span>
+
+                <span>
+                    ₹{{ bill.printing_charge }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Design Charge
+                </span>
+
+                <span>
+                    ₹{{ bill.design_charge }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Lamination
+                </span>
+
+                <span>
+                    ₹{{ bill.lamination }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Embossing
+                </span>
+
+                <span>
+                    ₹{{ bill.embossing }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row subtotal">
+
+                <span>
+                    Subtotal
+                </span>
+
+                <span>
+                    ₹{{ bill.subtotal }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    GST ({{ bill.gst }}%)
+                </span>
+
+                <span>
+                    ₹{{ bill.gst_amount }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Discount
+                </span>
+
+                <span>
+                    - ₹{{ bill.discount }}
+                </span>
+
+            </div>
+
+
+            <div class="summary-row total">
+
+                <span>
+                    GRAND TOTAL
+                </span>
+
+                <span>
+                    ₹{{ bill.final_amount }}
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <div class="footer">
+
+        <div class="thank-you">
+            {{ company_settings.invoice_footer|default:"Thank you for choosing GP Prints!" }}
+        </div>
+
+        <div class="footer-text">
+            We appreciate your business and look forward to serving you again.
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= ACTION BUTTONS ================= -->
+
+<div class="invoice-actions">
+
+    {% if not saved_invoice %}<form
+        method="POST"
+        action="{% url 'save_invoice' %}"
+        id="invoice-save-form"
+    >
+
+        {% csrf_token %}
+
+        <input
+            type="hidden"
+            name="invoice_number"
+            value="{{ invoice_number }}"
+        >
+
+        <input
+            type="hidden"
+            name="multicolor_items"
+            id="multicolor_items"
+            value="[]"
+        >
+
+        <button
+            type="submit"
+            class="save-button"
+            onclick="saveInvoiceAndPrint(event)"
+        >
+            Save Invoice / PDF
+        </button>
+
+    </form>{% endif %}
+
+
+    <button
+        type="button"
+        class="print-button"
+        onclick="window.print()"
+    >
+        Print
+    </button>
+
+
+    <a
+        href="{% if saved_invoice %}{% url 'dashboard' %}{% else %}{% url 'billing_page' %}{% endif %}"
+        class="back-button"
+    >
+        {% if saved_invoice %}Back to Dashboard{% else %}Back to Billing{% endif %}
+    </a>
+
+</div>
+
+{{ bill|json_script:"invoice-bill-data" }}
+
+<script>
+    function buildMulticolorPayload() {
+        const billElement = document.getElementById("invoice-bill-data");
+        const bill = billElement ? JSON.parse(billElement.textContent) : {};
+
+        if (Array.isArray(bill.multicolor_items) && bill.multicolor_items.length) {
+            return bill.multicolor_items;
+        }
+
+        const paperSize = bill.paper_size || "";
+        const printingCharge = Number(bill.printing_charge || 0);
+        const copies = Number(bill.copies || 0);
+        const color = bill.printing_color || "";
+        const pages = bill.printing_page || "";
+        const gsm = bill.gsm || "300";
+
+        if (!paperSize || !copies || printingCharge <= 0) {
+            return [];
+        }
+
+        return [{
+            "type": "multicolor",
+            "paper_size": paperSize,
+            "gsm": gsm,
+            "color": color,
+            "pages": pages,
+            "copies": copies,
+            "price": String(printingCharge),
+            "amount": String(printingCharge),
+            "label": paperSize + " / " + gsm + " GSM / " + (color || "-") + " / " + (pages || "-")
+        }];
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const payload = buildMulticolorPayload();
+        const field = document.getElementById("multicolor_items");
+        if (field) {
+            field.value = JSON.stringify(payload);
+        }
+    });
+
+    function saveInvoiceAndPrint(event) {
+        event.preventDefault();
+
+        const form = event.target.form;
+        const field = document.getElementById("multicolor_items");
+        if (field) {
+            field.value = JSON.stringify(buildMulticolorPayload());
+        }
+
+        event.target.disabled = true;
+
+        window.print();
+
+        form.submit();
+    }
+</script>
+
+</body>
+
+</html>

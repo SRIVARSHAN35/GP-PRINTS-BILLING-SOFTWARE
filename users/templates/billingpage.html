@@ -1,0 +1,1304 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>{% if multicolor_mode %}Multicolor Billing - GP Prints{% elif configured_service_mode %}Configured Service Billing - GP Prints{% else %}Billing - GP Prints{% endif %}</title>
+
+    <link rel="stylesheet"
+          href="{% static 'users/style.css' %}">
+
+</head>
+
+
+<body>
+
+
+<div class="billing-page{% if multicolor_mode %} multicolor-billing-page{% endif %}">
+
+
+    <!-- =========================
+         HEADER
+         ========================= -->
+
+    <div class="billing-header">
+
+        <h1>
+            {% if multicolor_mode %}GP Prints Multicolor Billing{% elif configured_service_mode %}GP Prints Configured Service Billing{% else %}GP Prints Billing{% endif %}
+        </h1>
+
+        <p>
+            Review order and calculate final bill
+        </p>
+
+    </div>
+
+
+
+    <!-- =========================
+         CUSTOMER DETAILS
+         ========================= -->
+
+    <div class="billing-section">
+
+        <h2>
+            Customer Details
+        </h2>
+
+
+        <div class="billing-details">
+
+
+            <div>
+
+                <strong>
+                    Customer Name
+                </strong>
+
+                <p>
+                    {{ customer.name|default:"-" }}
+                </p>
+
+            </div>
+
+
+            <div>
+
+                <strong>
+                    Phone
+                </strong>
+
+                <p>
+                    {{ customer.phone|default:"-" }}
+                </p>
+
+            </div>
+
+
+            <div>
+
+                <strong>
+                    Email
+                </strong>
+
+                <p>
+                    {{ customer.email|default:"-" }}
+                </p>
+
+            </div>
+
+
+            <div>
+
+                <strong>
+                    Address
+                </strong>
+
+                <p>
+                    {{ customer.address|default:"-" }}
+                </p>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================
+         SELECTED PRODUCTS
+         ========================= -->
+
+    <div class="billing-section card-only-billing">
+
+        <h2>
+            {% if configured_service_mode %}Configured Service Details{% else %}Selected Product Details{% endif %}
+        </h2>
+
+
+        <div class="billing-table-container">
+
+            <table class="billing-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Model Number
+                        </th>
+
+                        <th>
+                            Card Name
+                        </th>
+
+                        <th>
+                            Category
+                        </th>
+
+                        <th>
+                            Paper Type
+                        </th>
+
+                        <th>
+                            Paper Size
+                        </th>
+
+                        <th>
+                            Print Type
+                        </th>
+
+                        <th>
+                            {% if configured_service_mode %}Configured Quantity{% else %}Quantity{% endif %}
+                        </th>
+
+                        <th>
+                            {% if configured_service_mode %}Service Price{% else %}Card Price{% endif %}
+                        </th>
+
+                        <th>
+                            Amount
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    {% for item in cart %}
+
+                    <tr>
+
+                        <td>
+                            {{ item.model_number }}
+                        </td>
+
+                        <td>
+                            {{ item.name }}
+                        </td>
+
+                        <td>
+                            {{ item.category }}
+                        </td>
+
+                        <td>
+                            {{ item.paper_type }}
+                        </td>
+
+                        <td>
+                            {{ item.paper_size }}
+                        </td>
+
+                        <td>
+                            {{ item.print_type }}
+                        </td>
+
+                        <td>
+                            {{ item.display_quantity|default:item.quantity }}
+                        </td>
+
+                        <td>
+                            ₹{{ item.price }}
+                        </td>
+
+                        <td>
+                            ₹{{ item.amount }}
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="9">
+
+                            No products selected.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+        </div>
+
+
+        <div class="copies-display">
+
+            <strong>
+                Total Number of Copies:
+            </strong>
+
+            <span>
+                {{ copies }}
+            </span>
+
+        </div>
+
+    </div>
+
+
+
+    {% if multicolor_mode and multicolor_items %}
+    <div class="billing-section">
+        <h2>Multicolor Printing Items</h2>
+        <div class="billing-table-container">
+            <table class="billing-table">
+                <thead>
+                    <tr>
+                        <th>Paper Size</th>
+                        <th>GSM</th>
+                        <th>Copies</th>
+                        <th>Configured Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in multicolor_items %}
+                    <tr>
+                        <td>{{ item.paper_size }}</td>
+                        <td>{{ item.gsm }} GSM</td>
+                        <td>{{ item.copies }}</td>
+                        <td>₹{{ item.amount|default:"0.00" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- =========================
+         BILLING FORM
+         ========================= -->
+
+    <form method="POST" id="billing-form">
+
+        {% csrf_token %}
+
+        {% if not configured_service_mode and not multicolor_mode %}
+
+
+        <!-- =========================
+             PRINTING DETAILS
+             ========================= -->
+
+        <div class="billing-section">
+
+            <h2>
+                Printing Details
+            </h2>
+
+
+            <div class="billing-form">
+
+
+                <!-- PAPER SIZE -->
+
+                <div class="billing-field">
+
+                    <label>
+                        Paper Size
+                    </label>
+
+                    <select
+                        name="paper_size"
+                        id="paper_size"
+                        onchange="updatePrintingCharge()"
+                        required
+                    >
+
+                        <option value="">
+                            Select Size
+                        </option>
+
+                        <option value="A4"
+                            {% if paper_size == "A4" %}
+                                selected
+                            {% endif %}
+                        >
+                            A4
+                        </option>
+
+                        <option value="A3"
+                            {% if paper_size == "A3" %}
+                                selected
+                            {% endif %}
+                        >
+                            A3
+                        </option>
+
+                        <option value="210x280mm"
+                            {% if paper_size == "210x280mm" %}
+                                selected
+                            {% endif %}
+                        >
+                            210x280mm
+                        </option>
+
+                        <option value="visiting"
+                            {% if paper_size == "visiting" %}
+                                selected
+                            {% endif %}
+                        >
+                            Visiting Card
+                        </option>
+
+                        <option value="custom"
+                            {% if paper_size == "custom" %}
+                                selected
+                            {% endif %}
+                        >
+                            Custom Size
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- COPIES -->
+
+                <div class="billing-field">
+
+                    <label>
+                        Number of Copies
+                    </label>
+
+                    <input
+                        type="number"
+                        id="copies"
+                        value="{{ copies }}"
+                        readonly
+                    >
+
+                </div>
+
+
+                <!-- GSM -->
+
+                <div class="billing-field">
+
+                    <label>
+                        GSM
+                    </label>
+
+                    <select
+                        name="gsm"
+                        id="gsm"
+                        onchange="updatePrintingCharge()"
+                    >
+
+                        <option value="300"
+                            {% if gsm == "300" %}
+                                selected
+                            {% endif %}
+                        >
+                            300 GSM
+                        </option>
+
+                        <option value="350"
+                            {% if gsm == "350" %}
+                                selected
+                            {% endif %}
+                        >
+                            350 GSM
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- COLOR -->
+
+                <div class="billing-field">
+
+                    <label>
+                        Printing Color
+                    </label>
+
+                    <select
+                        name="printing_color"
+                        id="printing_color"
+                        onchange="updatePrintingCharge()"
+                    >
+
+                        <option value="">
+                            Select Color
+                        </option>
+
+                        <option value="single"
+                            {% if printing_color == "single" %}
+                                selected
+                            {% endif %}
+                        >
+                            Single Color
+                        </option>
+
+                        <option value="double"
+                            {% if printing_color == "double" %}
+                                selected
+                            {% endif %}
+                        >
+                            Double Color
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- PAGE -->
+
+                <div class="billing-field">
+
+                    <label>
+                        Printing Page
+                    </label>
+
+                    <select
+                        name="printing_page"
+                        id="printing_page"
+                        onchange="updatePrintingCharge()"
+                    >
+
+                        <option value="">
+                            Select Page
+                        </option>
+
+                        <option value="single"
+                            {% if printing_page == "single" %}
+                                selected
+                            {% endif %}
+                        >
+                            Single Page
+                        </option>
+
+                        <option value="double"
+                            {% if printing_page == "double" %}
+                                selected
+                            {% endif %}
+                        >
+                            Double Page
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- PRINTING CHARGE -->
+
+                <div class="billing-field">
+
+                    <label>
+                        Printing Charge
+                    </label>
+
+                    <input
+                        type="number"
+                        name="printing_charge"
+                        id="printing_charge"
+                        value="{{ printing_charge }}"
+                        min="0"
+                        step="0.01"
+                    >
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             DESIGN DETAILS
+             ========================= -->
+
+        <div class="billing-section card-only-billing">
+
+            <h2>
+                Design Charges
+            </h2>
+
+
+            <div class="billing-form">
+
+
+                <!-- DESIGN -->
+
+                <div class="billing-field">
+
+                    <label>
+                        Design Required
+                    </label>
+
+                    <select
+                        name="design_required"
+                        id="design_required"
+                        onchange="updateDesignCharge()"
+                    >
+
+                        <option value="no"
+                            {% if design_required == "no" %}
+                                selected
+                            {% endif %}
+                        >
+                            No
+                        </option>
+
+                        <option value="yes"
+                            {% if design_required == "yes" %}
+                                selected
+                            {% endif %}
+                        >
+                            Yes
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- DESIGN PAGE -->
+
+                <div class="billing-field">
+
+                    <label>
+                        Design Page
+                    </label>
+
+                    <select
+                        name="design_page"
+                        id="design_page"
+                        onchange="updateDesignCharge()"
+                    >
+
+                        <option value="single"
+                            {% if design_page == "single" %}
+                                selected
+                            {% endif %}
+                        >
+                            Single Page
+                        </option>
+
+                        <option value="double"
+                            {% if design_page == "double" %}
+                                selected
+                            {% endif %}
+                        >
+                            Double Page
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- DESIGN CHARGE -->
+
+                <div class="billing-field">
+
+                    <label>
+                        Design Charge
+                    </label>
+
+                    <input
+                        type="number"
+                        name="design_charge"
+                        id="design_charge"
+                        value="{{ design_charge }}"
+                        min="0"
+                        step="0.01"
+                    >
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        {% endif %}
+
+
+        <!-- =========================
+             OTHER CHARGES
+             ========================= -->
+
+        <div class="billing-section">
+
+            <h2>
+                Other Charges
+            </h2>
+
+
+            <div class="billing-form">
+
+
+                <div class="billing-field">
+
+                    <label>
+                        Lamination
+                    </label>
+
+                    <input
+                        type="number"
+                        name="lamination"
+                        value="{{ lamination }}"
+                        min="0"
+                        step="0.01"
+                    >
+
+                </div>
+
+
+                <div class="billing-field">
+
+                    <label>
+                        Embossing
+                    </label>
+
+                    <input
+                        type="number"
+                        name="embossing"
+                        value="{{ embossing }}"
+                        min="0"
+                        step="0.01"
+                    >
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =========================
+             GST & DISCOUNT
+             ========================= -->
+
+        <div class="billing-section">
+
+            <h2>
+                GST & Discount
+            </h2>
+
+
+            <div class="billing-form">
+
+
+                <div class="billing-field">
+
+    <label>
+        GST
+    </label>
+
+    <select name="gst">
+
+        <option value="0"
+            {% if gst == 0 %}
+                selected
+            {% endif %}
+        >
+            No GST
+        </option>
+
+        <option value="5"
+            {% if gst == 5 %}
+                selected
+            {% endif %}
+        >
+            5%
+        </option>
+
+        <option value="12"
+            {% if gst == 12 %}
+                selected
+            {% endif %}
+        >
+            12%
+        </option>
+
+        <option value="18"
+            {% if gst == 18 %}
+                selected
+            {% endif %}
+        >
+            18%
+        </option>
+
+        <option value="28"
+            {% if gst == 28 %}
+                selected
+            {% endif %}
+        >
+            28%
+        </option>
+
+    </select>
+
+</div>
+
+
+                <div class="billing-field">
+
+                    <label>
+                        Discount
+                    </label>
+
+                    <input
+                        type="number"
+                        name="discount"
+                        value="{{ discount }}"
+                        min="0"
+                        step="0.01"
+                    >
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =========================
+             BILL SUMMARY
+             ========================= -->
+
+        <div class="billing-summary">
+
+
+            <div>
+
+                <span>
+                    {% if configured_service_mode %}Service Total{% else %}Product Total{% endif %}
+                </span>
+
+                <strong>
+                    ₹{{ card_total|floatformat:2 }}
+                </strong>
+
+            </div>
+
+
+            {% if not configured_service_mode %}
+            <div>
+
+                <span>
+                    Printing Charge
+                </span>
+
+                <strong>
+                    ₹{{ printing_charge|floatformat:2 }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Design Charge
+                </span>
+
+                <strong>
+                    ₹{{ design_charge|floatformat:2 }}
+                </strong>
+
+            </div>
+
+            {% endif %}
+
+
+            <div>
+
+                <span>
+                    Lamination
+                </span>
+
+                <strong>
+                    ₹{{ lamination|floatformat:2 }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Embossing
+                </span>
+
+                <strong>
+                    ₹{{ embossing|floatformat:2 }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Subtotal
+                </span>
+
+                <strong>
+                    ₹{{ subtotal|floatformat:2 }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    GST ({{ gst }}%)
+                </span>
+
+                <strong>
+                    ₹{{ gst_amount|floatformat:2 }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Discount
+                </span>
+
+                <strong>
+                    - ₹{{ discount|floatformat:2 }}
+                </strong>
+
+            </div>
+
+
+            <!-- FINAL -->
+
+            <div class="final-amount">
+
+                <span>
+                    Final Amount
+                </span>
+
+                <strong>
+                    ₹{{ final_amount|floatformat:2 }}
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =========================
+             ACTION BUTTONS
+             ========================= -->
+
+        <div class="billing-actions">
+
+    <button
+        type="submit"
+        class="billing-button"
+    >
+        Calculate Bill
+    </button>
+
+
+    <button
+        type="submit"
+        name="next"
+        value="invoice"
+        class="billing-button invoice-button"
+    >
+        Next → View Invoice
+    </button>
+
+
+    <a
+        href="{% url 'order_page' %}"
+        class="billing-back"
+    >
+        ← Back to Order
+    </a>
+
+</div>
+
+    </form>
+
+
+</div>
+
+
+
+<!-- =========================
+     JAVASCRIPT
+     ========================= -->
+
+{{ printing_charges|json_script:"printing-charges-data" }}
+{{ design_charges|json_script:"design-charges-data" }}
+
+<script>
+
+const billingForm = document.getElementById("billing-form");
+const billingScrollKey = "billing-scroll-position";
+
+const savedBillingScroll = sessionStorage.getItem(billingScrollKey);
+if (savedBillingScroll !== null) {
+    sessionStorage.removeItem(billingScrollKey);
+    const restoreBillingScroll = () => {
+        if (document.activeElement) {
+            document.activeElement.blur();
+        }
+        window.scrollTo(0, Number(savedBillingScroll));
+    };
+    window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(restoreBillingScroll);
+    });
+    window.setTimeout(restoreBillingScroll, 100);
+}
+
+billingForm.addEventListener("submit", (event) => {
+    if (event.submitter && event.submitter.name === "next") {
+        return;
+    }
+    sessionStorage.setItem(billingScrollKey, String(window.scrollY));
+});
+
+const printingCharges = JSON.parse(
+    document.getElementById("printing-charges-data").textContent
+);
+const designCharges = JSON.parse(
+    document.getElementById("design-charges-data").textContent
+);
+
+
+function updatePrintingCharge() {
+
+    const paperSizeField = document.getElementById("paper_size");
+    const copiesField = document.getElementById("copies");
+    const colorField = document.getElementById("printing_color");
+    const pageField = document.getElementById("printing_page");
+    const chargeField = document.getElementById("printing_charge");
+
+    if (!paperSizeField || !copiesField || !colorField || !pageField || !chargeField) {
+        return;
+    }
+
+    let size =
+        document.getElementById(
+            "paper_size"
+        ).value;
+
+
+    let copies =
+        parseInt(
+            document.getElementById(
+                "copies"
+            ).value
+        ) || 0;
+
+
+    let color =
+        document.getElementById(
+            "printing_color"
+        ).value;
+
+
+    let page =
+        document.getElementById(
+            "printing_page"
+        ).value;
+
+
+    let charge = 0;
+
+
+    /*
+    =========================
+    VISITING CARD
+    =========================
+    */
+
+    if (size === "visiting") {
+
+        document.getElementById("printing_charge").value =
+            printingCharges.visiting || 0;
+
+        return;
+
+    }
+
+
+    /*
+    =========================
+    CUSTOM SIZE
+    =========================
+    */
+
+    if (size === "custom") {
+
+        document.getElementById("printing_charge").value =
+            printingCharges.custom || 0;
+
+        return;
+
+    }
+
+
+    /*
+    =========================
+    MULTIPLIER
+    =========================
+
+    100 - 1000     = ×1
+    1001 - 2000    = ×2
+    2001 - 3000    = ×3
+    */
+
+    let multiplier =
+        Math.ceil(
+            copies / 1000
+        );
+
+
+    /*
+    =========================
+    A4
+    =========================
+    */
+
+    if (size === "A4") {
+
+
+        if (
+            color === "single" &&
+            page === "single"
+        ) {
+
+            charge = Number(printingCharges.A4_single_single) * multiplier;
+
+        }
+
+
+        else if (
+            color === "single" &&
+            page === "double"
+        ) {
+
+            charge = Number(printingCharges.A4_single_double) * multiplier;
+
+        }
+
+
+        else if (
+            color === "double" &&
+            page === "single"
+        ) {
+
+            charge = Number(printingCharges.A4_double_single) * multiplier;
+
+        }
+
+
+        else if (
+            color === "double" &&
+            page === "double"
+        ) {
+
+            charge = Number(printingCharges.A4_double_double) * multiplier;
+
+        }
+
+    }
+
+
+    /*
+    =========================
+    A3
+    =========================
+    */
+
+    else if (size === "A3") {
+
+
+        if (
+            color === "single" &&
+            page === "single"
+        ) {
+
+            charge = Number(printingCharges.A3_single_single) * multiplier;
+
+        }
+
+
+        else if (
+            color === "single" &&
+            page === "double"
+        ) {
+
+            charge = Number(printingCharges.A3_single_double) * multiplier;
+
+        }
+
+
+        else if (
+            color === "double" &&
+            page === "single"
+        ) {
+
+            charge = Number(printingCharges.A3_double_single) * multiplier;
+
+        }
+
+
+        else if (
+            color === "double" &&
+            page === "double"
+        ) {
+
+            charge = Number(printingCharges.A3_double_double) * multiplier;
+
+        }
+
+    }
+
+
+    document.getElementById(
+        "printing_charge"
+    ).value =
+        charge;
+
+}
+
+
+
+function updateDesignCharge() {
+
+    let required =
+        document.getElementById(
+            "design_required"
+        ).value;
+
+
+    let size =
+        document.getElementById(
+            "paper_size"
+        ).value;
+
+
+    let page =
+        document.getElementById(
+            "design_page"
+        ).value;
+
+
+    let charge = 0;
+
+
+    if (required === "yes") {
+
+
+        if (
+            size === "A4" &&
+            page === "single"
+        ) {
+
+            charge = Number(designCharges.A4_single);
+
+        }
+
+
+        else if (
+            size === "A4" &&
+            page === "double"
+        ) {
+
+            charge = Number(designCharges.A4_double);
+
+        }
+
+
+        else if (
+            size === "A3" &&
+            page === "single"
+        ) {
+
+            charge = Number(designCharges.A3_single);
+
+        }
+
+
+        else if (
+            size === "A3" &&
+            page === "double"
+        ) {
+
+            charge = Number(designCharges.A3_double);
+
+        }
+
+
+        else if (
+            size === "visiting"
+        ) {
+
+            charge = Number(designCharges.visiting);
+
+        }
+
+    }
+
+
+    document.getElementById(
+        "design_charge"
+    ).value =
+        charge;
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>

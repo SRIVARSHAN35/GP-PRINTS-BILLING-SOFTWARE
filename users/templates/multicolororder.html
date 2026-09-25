@@ -1,0 +1,367 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multicolor Order - GP Prints</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}?v=2">
+    <style>
+        .multicolor-page {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .multicolor-details-section {
+            border-top: 4px solid #1f2937;
+        }
+
+        .multicolor-details-section h2 {
+            margin-bottom: 24px;
+        }
+
+        .multicolor-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .multicolor-field {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .multicolor-field label {
+            color: #374151;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .multicolor-field select,
+        .multicolor-field input {
+            width: 100%;
+            min-height: 46px;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #fff;
+            color: #111827;
+            font-size: 16px;
+        }
+
+        .multicolor-price-card {
+            display: flex;
+            min-height: 46px;
+            flex-direction: column;
+            justify-content: center;
+            padding: 8px 14px;
+            border-left: 4px solid #0f766e;
+            background: #ecfdf5;
+        }
+
+        .multicolor-price-label {
+            color: #166534;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        #multicolor_price {
+            color: #14532d;
+            font-size: 22px;
+        }
+
+        .multicolor-add-button {
+            margin-top: 24px;
+        }
+
+        .multicolor-cart-section {
+            margin-top: 24px;
+        }
+
+        @media (max-width: 700px) {
+            .multicolor-details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="order-page multicolor-page">
+    <div class="order-header">
+        <h1>Multicolor Order</h1>
+        <p>Add multicolor printing jobs to the cart before billing</p>
+    </div>
+
+    <div class="order-section">
+        <h2>Customer</h2>
+        <input type="text" id="customer_search" class="order-search" placeholder="Search customer by name or phone" autocomplete="off">
+        <div id="customer_results" class="order-results"></div>
+        <button type="button" id="new_customer_button" class="new-customer-button" onclick="showNewCustomerForm()">+ New Customer</button>
+
+        <div id="newCustomerForm" class="new-customer-form" style="display:none;">
+            <h2>New Customer</h2>
+            <div class="customer-form-grid">
+                <div><label>Customer Name</label><input type="text" id="newCustomerName"></div>
+                <div><label>Phone</label><input type="text" id="newCustomerPhone"></div>
+                <div><label>Email</label><input type="email" id="newCustomerEmail"></div>
+                <div><label>Address</label><textarea id="newCustomerAddress"></textarea></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="order-section selected-box" id="selected_customer" style="display:none;">
+        <h2>Selected Customer</h2>
+        <p><strong>Name:</strong> <span id="customer_name"></span></p>
+        <p><strong>Phone:</strong> <span id="customer_phone"></span></p>
+        <p><strong>Email:</strong> <span id="customer_email"></span></p>
+        <p><strong>Address:</strong> <span id="customer_address"></span></p>
+    </div>
+
+    <div class="order-section multicolor-details-section">
+        <h2>Multicolor Printing Details</h2>
+        <div class="multicolor-details-grid">
+            <div class="multicolor-field">
+                <label>Paper Size</label>
+                <select id="multicolor_paper_size"></select>
+            </div>
+            <div class="multicolor-field">
+                <label>GSM</label>
+                <select id="multicolor_gsm"></select>
+            </div>
+            <div class="multicolor-field">
+                <label>Copies</label>
+                <select id="multicolor_copies"></select>
+            </div>
+            <div class="multicolor-field">
+                <label>Printing</label>
+                <select id="multicolor_side"></select>
+            </div>
+            <div class="multicolor-field">
+                <label>Finish</label>
+                <select id="multicolor_finish"></select>
+            </div>
+            <div class="multicolor-price-card">
+                <span class="multicolor-price-label">Configured Price</span>
+                <strong id="multicolor_price">₹0.00</strong>
+            </div>
+        </div>
+        <button type="button" class="order-button multicolor-add-button" onclick="addMulticolorItem()">Add to Cart</button>
+    </div>
+
+    <div class="cart-section multicolor-cart-section">
+        <h2>Multicolor Cart</h2>
+        <table class="cart-table">
+            <thead>
+                <tr><th>Paper Size</th><th>GSM</th><th>Copies</th><th>Rate</th><th>Action</th></tr>
+            </thead>
+            <tbody id="multicolor_cart_body"></tbody>
+        </table>
+        <div class="generate-bill">
+            <button type="button" onclick="generateBill()">Generate Bill</button>
+        </div>
+    </div>
+
+    <a href="{% url 'order_page' %}" class="order-back">← Change Order Type</a>
+</div>
+
+<script>
+    let selectedCustomer = null;
+    let multicolorItems = [];
+    const multicolorRules = {{ multicolor_rules_json|safe }};
+
+    function setOptions(id, values, labelSuffix) {
+        const select = document.getElementById(id);
+        select.innerHTML = [...new Set(values)].map(value =>
+            `<option value="${value}">${value}${labelSuffix || ""}</option>`
+        ).join("");
+    }
+
+    setOptions("multicolor_paper_size", multicolorRules.map(rule => rule.paper_size));
+    setOptions("multicolor_gsm", multicolorRules.map(rule => rule.gsm), " GSM");
+    setOptions("multicolor_copies", multicolorRules.map(rule => rule.copies));
+    setOptions("multicolor_side", multicolorRules.map(rule => rule.side));
+    setOptions("multicolor_finish", multicolorRules.map(rule => rule.finish || "standard"));
+
+    function getMulticolorPrice() {
+        let paperSize = document.getElementById("multicolor_paper_size").value;
+        let gsm = document.getElementById("multicolor_gsm").value;
+        let copies = parseInt(document.getElementById("multicolor_copies").value, 10) || 0;
+        let side = document.getElementById("multicolor_side").value;
+        let finish = document.getElementById("multicolor_finish").value;
+        let rule = multicolorRules.find(item =>
+            item.paper_size === paperSize &&
+            item.gsm === gsm &&
+            Number(item.copies) === copies &&
+            item.side === side &&
+            (item.finish || "standard") === finish
+        );
+        let price = rule ? rule.price : "0";
+        document.getElementById("multicolor_price").innerText = `₹${Number(price).toFixed(2)}`;
+        return String(price);
+    }
+
+    function normalizeMulticolorSide(value) {
+        return String(value || "single").trim().toLowerCase();
+    }
+
+    ["multicolor_paper_size", "multicolor_gsm", "multicolor_copies", "multicolor_side", "multicolor_finish"].forEach(function(id) {
+        document.getElementById(id).addEventListener("change", getMulticolorPrice);
+        document.getElementById(id).addEventListener("input", getMulticolorPrice);
+    });
+
+    getMulticolorPrice();
+
+    document.getElementById("customer_search").addEventListener("input", function() {
+        let search = this.value;
+        if (!search) {
+            document.getElementById("customer_results").innerHTML = "";
+            return;
+        }
+
+        fetch("{% url 'search_customer' %}?search=" + encodeURIComponent(search))
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("customer_results").innerHTML = data.customers.map(customer => `
+                    <div class="search-result" onclick="selectCustomer(${customer.id}, '${customer.name}', '${customer.phone}', '${customer.email}', '${customer.address}')">
+                        <strong>${customer.name}</strong><br>
+                        <span>Phone: ${customer.phone}</span><br>
+                        <span>Email: ${customer.email}</span>
+                    </div>
+                `).join("");
+            });
+    });
+
+    function selectCustomer(id, name, phone, email, address) {
+        selectedCustomer = {id, name, phone, email, address};
+        document.getElementById("customer_search").value = name;
+        document.getElementById("customer_results").innerHTML = "";
+        document.getElementById("selected_customer").style.display = "block";
+        document.getElementById("customer_name").innerText = name;
+        document.getElementById("customer_phone").innerText = phone;
+        document.getElementById("customer_email").innerText = email;
+        document.getElementById("customer_address").innerText = address;
+    }
+
+    function addMulticolorItem() {
+        let hasNewCustomer = document.getElementById("newCustomerName").value.trim() && document.getElementById("newCustomerPhone").value.trim();
+        if (!selectedCustomer && !hasNewCustomer) {
+            alert("Please select a customer or enter new customer details first.");
+            return;
+        }
+
+        let copies = parseInt(document.getElementById("multicolor_copies").value, 10);
+        if (!copies || copies < 1) {
+            alert("Copies must be at least 1.");
+            return;
+        }
+
+        multicolorItems.push({
+            type: "multicolor",
+            paper_size: document.getElementById("multicolor_paper_size").value,
+            gsm: document.getElementById("multicolor_gsm").value,
+            copies: copies,
+            side: document.getElementById("multicolor_side").value,
+            finish: document.getElementById("multicolor_finish").value,
+            price: getMulticolorPrice(),
+            amount: getMulticolorPrice()
+        });
+        displayCart();
+    }
+
+    function displayCart() {
+        document.getElementById("multicolor_cart_body").innerHTML = multicolorItems.map((item, index) => `
+            <tr>
+                <td>${item.paper_size}</td>
+                <td>${item.gsm} GSM</td>
+                <td>${item.copies}</td>
+                <td>₹${Number(item.amount || 0).toFixed(2)}</td>
+                <td><button type="button" class="remove-button" onclick="removeItem(${index})">Remove</button></td>
+            </tr>
+        `).join("");
+    }
+
+    function removeItem(index) {
+        multicolorItems.splice(index, 1);
+        displayCart();
+    }
+
+    function generateBill() {
+        if (!multicolorItems.length) {
+            alert("Please add a multicolor item to the cart first.");
+            return;
+        }
+
+        let newCustomer = null;
+        if (!selectedCustomer) {
+            newCustomer = {
+                name: document.getElementById("newCustomerName").value.trim(),
+                phone: document.getElementById("newCustomerPhone").value.trim(),
+                email: document.getElementById("newCustomerEmail").value.trim(),
+                address: document.getElementById("newCustomerAddress").value.trim()
+            };
+        }
+
+        if (!selectedCustomer && (!newCustomer.name || !newCustomer.phone)) {
+            alert("Please enter customer name and phone number.");
+            return;
+        }
+
+        let form = document.createElement("form");
+        form.method = "POST";
+        form.action = "{% url 'multicolor_billing_page' %}";
+        let csrf = document.createElement("input");
+        csrf.type = "hidden";
+        csrf.name = "csrfmiddlewaretoken";
+        csrf.value = "{{ csrf_token }}";
+        form.appendChild(csrf);
+
+        if (selectedCustomer) {
+            let customer = document.createElement("input");
+            customer.type = "hidden";
+            customer.name = "customer_id";
+            customer.value = selectedCustomer.id;
+            form.appendChild(customer);
+        } else {
+            Object.entries({
+                new_customer_name: newCustomer.name,
+                new_customer_phone: newCustomer.phone,
+                new_customer_email: newCustomer.email,
+                new_customer_address: newCustomer.address
+            }).forEach(([name, value]) => {
+                let input = document.createElement("input");
+                input.type = "hidden";
+                input.name = name;
+                input.value = value;
+                form.appendChild(input);
+            });
+        }
+
+        let cart = document.createElement("input");
+        cart.type = "hidden";
+        cart.name = "cart";
+        cart.value = "[]";
+        form.appendChild(cart);
+
+        let items = document.createElement("input");
+        items.type = "hidden";
+        items.name = "multicolor_items";
+        items.value = JSON.stringify(multicolorItems);
+        form.appendChild(items);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function showNewCustomerForm() {
+        document.getElementById("newCustomerForm").style.display = "block";
+        document.getElementById("new_customer_button").style.display = "none";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Bill - GP Prints</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+</head>
+<body>
+
+<div class="report-page">
+    <header class="report-header">
+        <div>
+            <h1>Edit Bill</h1>
+            <p>{{ bill.invoice_number }}</p>
+        </div>
+        <a href="{% url 'reports' %}" class="report-back">Back to Reports</a>
+    </header>
+
+    <form method="POST" class="bill-edit-form">
+        {% csrf_token %}
+
+        <h2>Customer Details</h2>
+        <div class="bill-edit-grid">
+            <label>Customer Name<input type="text" name="customer_name" value="{{ bill.customer_name }}" required></label>
+            <label>Phone<input type="text" name="customer_phone" value="{{ bill.customer_phone }}" required></label>
+            <label>Email<input type="email" name="customer_email" value="{{ bill.customer_email }}"></label>
+            <label>Address<textarea name="customer_address">{{ bill.customer_address }}</textarea></label>
+        </div>
+
+        <h2>Bill Amounts</h2>
+        <div class="bill-edit-grid">
+            <label>Printing Charge<input type="number" step="0.01" name="printing_charge" value="{{ bill.printing_charge }}"></label>
+            <label>Design Charge<input type="number" step="0.01" name="design_charge" value="{{ bill.design_charge }}"></label>
+            <label>Lamination<input type="number" step="0.01" name="lamination" value="{{ bill.lamination }}"></label>
+            <label>Embossing<input type="number" step="0.01" name="embossing" value="{{ bill.embossing }}"></label>
+            <label>GST Amount<input type="number" step="0.01" name="gst_amount" value="{{ bill.gst_amount }}"></label>
+            <label>Discount<input type="number" step="0.01" name="discount" value="{{ bill.discount }}"></label>
+            <label>Subtotal<input type="number" step="0.01" name="subtotal" value="{{ bill.subtotal }}"></label>
+            <label>Final Amount<input type="number" step="0.01" name="final_amount" value="{{ bill.final_amount }}" required></label>
+        </div>
+
+        <div class="bill-edit-actions">
+            <button type="submit" class="save-customer-btn">Save Changes</button>
+            <a href="{% url 'reports' %}" class="cancel-btn">Cancel</a>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

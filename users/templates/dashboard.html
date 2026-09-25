@@ -1,0 +1,289 @@
+{% load static %}
+{% include "theme.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>GP Prints Dashboard</title>
+
+        <link rel="stylesheet"
+            href="{% static 'users/style.css' %}?v=8">
+
+</head>
+
+<body>
+
+<div class="dashboard" id="dashboard-shell">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar" id="dashboard-sidebar">
+
+        <button
+            type="button"
+            class="menu-toggle menu-toggle-sidebar"
+            aria-label="Close navigation menu"
+            aria-controls="dashboard-sidebar"
+            aria-expanded="true"
+            onclick="toggleDashboardMenu()"
+        >
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <div class="logo">
+
+            <h1>GP PRINTS</h1>
+
+
+        </div>
+
+
+        <ul class="menu">
+
+            <li>
+                <a href="#" class="active">
+                    Dashboard
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'customer_list' %}">
+                    Customers
+                </a>
+            </li>
+
+            <li>
+                        <a href="{% url 'product_list' %}">
+                    Products
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'order_page' %}">
+                    Orders
+                </a>
+            </li>
+
+            <li>
+                <a href="#">
+                    Billing
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'reports' %}">
+                    Reports
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'settings_page' %}">
+                    Settings
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'logoutpage' %}" class="logout">
+                    Logout
+                </a>
+            </li>
+
+        </ul>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+
+    <main class="main-content">
+
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <button
+                type="button"
+                class="menu-toggle menu-toggle-topbar"
+                aria-label="Open navigation menu"
+                aria-controls="dashboard-sidebar"
+                aria-expanded="false"
+                onclick="toggleDashboardMenu()"
+            >
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <h2>Dashboard</h2>
+
+            <div class="user-area">
+
+                <span class="username">
+                    Welcome, {{ username }}
+                    <span>{{ role|title }}</span>
+                </span>
+
+                <a href="{% url 'logoutpage' %}" class="logout">
+                    Logout
+                </a>
+
+            </div>
+
+        </header>
+
+
+        <!-- CONTENT -->
+
+        <section class="content">
+
+            <h1>
+                GP Prints Dashboard
+            </h1>
+
+
+            <div class="cards">
+
+                <div class="card">
+                    <h3>Customers</h3>
+                    <div class="number">{{ customer_count }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>Products</h3>
+                    <div class="number">{{ product_count }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>Today's Orders</h3>
+                    <div class="number">{{ today_order_count }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>Today's Sales</h3>
+                    <div class="number">₹{{ today_total_sales|floatformat:2 }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>This Week</h3>
+                    <div class="number">₹{{ this_week_total_sales|floatformat:2 }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>This Month</h3>
+                    <div class="number">₹{{ this_month_total_sales|floatformat:2 }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>Total Revenue</h3>
+                    <div class="number">₹{{ total_revenue|floatformat:2 }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>Multicolor Revenue</h3>
+                    <div class="number">₹{{ multicolor_total_sales|floatformat:2 }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>Total Copies</h3>
+                    <div class="number">{{ today_total_copies }}</div>
+                </div>
+
+                <div class="card">
+                    <h3>GST Collected</h3>
+                    <div class="number">₹{{ today_gst_collected|floatformat:2 }}</div>
+                </div>
+
+            </div>
+
+            <section class="recent-invoices">
+
+                <div class="recent-invoices-header">
+                    <div>
+                        <h2>Recent Invoices</h2>
+                        <p>Search and open completed invoices.</p>
+                    </div>
+
+                    <form method="get" class="invoice-search-form">
+                        <input
+                            type="search"
+                            name="invoice_search"
+                            value="{{ invoice_search }}"
+                            placeholder="Search invoice, name, or phone"
+                            aria-label="Search invoices"
+                        >
+                        <button type="submit">Search</button>
+                    </form>
+                </div>
+
+                {% if recent_invoices %}
+                    <div class="invoice-table-wrapper">
+                        <table class="invoice-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Total</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in recent_invoices %}
+                                    <tr>
+                                        <td><strong>{{ invoice.invoice_number }}</strong></td>
+                                        <td>{{ invoice.customer_name }}</td>
+                                        <td>{{ invoice.created_at|date:"d M Y, h:i A" }}</td>
+                                        <td>₹{{ invoice.final_amount|floatformat:2 }}</td>
+                                        <td>
+                                            <a href="{% url 'view_invoice' invoice.id %}" class="edit-btn">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="empty-invoices">
+                        {% if invoice_search %}
+                            No invoices match your search.
+                        {% else %}
+                            No invoices have been completed yet.
+                        {% endif %}
+                    </p>
+                {% endif %}
+
+            </section>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script>
+    function toggleDashboardMenu() {
+        const dashboard = document.getElementById("dashboard-shell");
+        const isOpen = dashboard.classList.toggle("menu-open");
+        const topbarButton = document.querySelector(".menu-toggle-topbar");
+        const sidebarButton = document.querySelector(".menu-toggle-sidebar");
+
+        topbarButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        sidebarButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        topbarButton.setAttribute("aria-label", "Open navigation menu");
+        sidebarButton.setAttribute("aria-label", "Close navigation menu");
+    }
+</script>
+
+</body>
+
+</html>
