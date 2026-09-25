@@ -29,7 +29,9 @@ DEBUG = os.environ.get(
     "True"
 ).lower() == "true"
 
-ALLOWED_HOSTS = [
+render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")
+
+allowed_hosts = [
     host.strip()
     for host in os.environ.get(
         "DJANGO_ALLOWED_HOSTS",
@@ -38,7 +40,13 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-CSRF_TRUSTED_ORIGINS = [
+if render_host:
+    allowed_hosts.append(render_host)
+
+ALLOWED_HOSTS = list(dict.fromkeys(allowed_hosts))
+
+
+trusted_origins = [
     origin.strip()
     for origin in os.environ.get(
         "DJANGO_CSRF_TRUSTED_ORIGINS",
@@ -47,6 +55,10 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+if render_host:
+    trusted_origins.append(f"https://{render_host}")
+
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(trusted_origins))
 
 # ---------------------------------------------------------
 # APPLICATIONS
